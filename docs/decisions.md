@@ -60,6 +60,19 @@ Drift에도, 일반 preferences에도, export 백업에도 들어가지 않는�
 > Firebase 프로젝트와 서비스 계정은 아직 만들지 않았다. Android 배포를 실제로 돌리려면
 > Firebase 프로젝트 ID와 App Distribution 용 서비스 계정 키가 필요하다.
 
+### 비밀 파일은 git-crypt (대칭키)
+
+저장소가 public이므로 서명 키, Firebase 서비스 계정, `.env` 는 암호화해서 커밋한다.
+`.gitignore` 로 빼는 대신 git-crypt를 쓰는 이유는, 파일이 버전 관리 안에 남아 있어야
+CI가 쓸 수 있고 기기를 바꿔도 따라오기 때문이다.
+
+GPG 대신 대칭키를 쓴다. 1인 프로젝트라 키 배포 대상이 없고, CI에는 base64로 인코딩한
+키 하나를 GitHub Secret에 넣으면 끝난다. GPG 키링 관리 비용만 늘어난다.
+
+한계: 암호문의 **파일 이름과 크기는 공개된다.** 이름에 정보를 담지 않는다.
+키는 `~/.config/git-crypt/car-log.key` 에 있고 저장소에는 들어가지 않는다.
+키를 잃으면 암호화된 파일은 복구 불가다.
+
 ## 미정 / 검증 필요
 
 ### Connected Car (현대·기아) 아키텍처

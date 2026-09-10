@@ -72,6 +72,10 @@ provider는 그것이 만드는 대상 옆에 둔다 — repository provider는 
 **자격증명은 SecureStore에만.** API Key와 OAuth 토큰을 Drift, preferences, export 백업,
 로그 어디에도 남기지 않는다. 영수증 원문도 로그에 찍지 않는다.
 
+**저장소의 비밀 파일은 git-crypt로 암호화한다.** 저장소가 public이므로, 비밀 파일을
+커밋하기 전에 `/.gitattributes` 에 패턴이 있는지 먼저 확인하고 `git-crypt status -e` 로
+암호화 대상인지 검증한다. 패턴에 없는 파일은 평문으로 공개된다.
+
 **추상화는 실제 사용처가 생긴 뒤에.** AI Provider 인터페이스처럼 핸드오프 문서가 명시한
 경계만 미리 만든다. 그 외 일반화는 두 번째 구현체가 생길 때 한다.
 

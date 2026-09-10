@@ -55,14 +55,9 @@ app.*.map.json
 # CocoaPods
 /ios/Pods/
 
-# Secrets — never commit signing material or provider credentials
-*.jks
-*.keystore
-*.p12
-*.p8
-*.mobileprovision
-/android/key.properties
-/android/app/google-services.json
-/ios/Runner/GoogleService-Info.plist
-.env
-.env.*
+# 비밀 파일은 ignore하지 않고 git-crypt로 암호화해서 추적한다.
+# 대상 패턴은 .gitattributes 에 있다. 거기에 없는 비밀 파일은 커밋하지 말 것.
+
+# git-crypt 키 자체는 저장소에 들어가면 안 된다.
+*.key
+!ios/**/*.key

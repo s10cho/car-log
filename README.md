@@ -53,6 +53,21 @@ flutter test integration_test            # 시뮬레이터/기기 필요
 Firebase App Distribution으로 배포해 실기기에서 확인한다. 자세한 내용은
 [docs/decisions.md](docs/decisions.md) 참고.
 
+## 비밀 관리
+
+저장소는 public이다. 서명 키, Firebase 서비스 계정, `.env` 같은 비밀 파일은
+**git-crypt로 암호화해서** 커밋한다. 대상 패턴은 [`.gitattributes`](.gitattributes)에 있다.
+
+새로 clone한 뒤에는 잠금을 풀어야 한다.
+
+```bash
+git-crypt unlock ~/.config/git-crypt/car-log.key
+git-crypt status -e     # 암호화 대상 파일 확인
+```
+
+키 파일은 저장소 밖(`~/.config/git-crypt/car-log.key`)에 있다. **잃어버리면 복구할 수
+없으니 비밀번호 관리자에 백업할 것.** 자세한 내용은 [secrets/README.md](secrets/README.md).
+
 ## 구조
 
 ```
