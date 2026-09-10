@@ -2,22 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/database/app_database.dart';
 import '../data/vehicle_repository.dart';
 
-/// First-run vehicle registration.
+/// Registers a new vehicle, or edits an existing one when [vehicleId] is given.
 ///
 /// Manual entry only: looking a car up by plate or VIN needs an API whose
 /// commercial availability is still unverified (docs/decisions.md).
-class VehicleRegistrationPage extends ConsumerStatefulWidget {
-  const VehicleRegistrationPage({super.key});
+class VehicleFormPage extends ConsumerStatefulWidget {
+  const VehicleFormPage({this.vehicleId, super.key});
+
+  /// Null when registering, set when editing.
+  final int? vehicleId;
+
+  bool get isEditing => vehicleId != null;
 
   @override
-  ConsumerState<VehicleRegistrationPage> createState() =>
-      _VehicleRegistrationPageState();
+  ConsumerState<VehicleFormPage> createState() => _VehicleFormPageState();
 }
 
-class _VehicleRegistrationPageState
-    extends ConsumerState<VehicleRegistrationPage> {
+class _VehicleFormPageState extends ConsumerState<VehicleFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _displayName = TextEditingController();
   final _manufacturer = TextEditingController();
@@ -26,7 +30,38 @@ class _VehicleRegistrationPageState
   final _licensePlate = TextEditingController();
   final _mileage = TextEditingController();
 
+  bool _loading = false;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isEditing) {
+      _loading = true;
+      _load();
+    }
+  }
+
+  Future<void> _load() async {
+    final vehicle = await ref
+        .read(vehicleRepositoryProvider)
+        .findById(widget.vehicleId!);
+    if (!mounted) {
+      return;
+    }
+    if (vehicle != null) {
+      _fill(vehicle);
+    }
+    setState(() => _loading = false);
+  }
+
+  void _fill(Vehicle vehicle) {
+    _displayName.text = vehicle.displayName;
+    _manufacturer.text = vehicle.manufacturer ?? '';
+    _model.text = vehicle.model ?? '';
+    _modelYear.text = vehicle.modelYear?.toString() ?? '';
+    _licensePlate.text = vehicle.licensePlate ?? '';
+  }
 
   @override
   void dispose() {
@@ -45,17 +80,29 @@ class _VehicleRegistrationPageState
     }
     setState(() => _saving = true);
 
+    final repository = ref.read(vehicleRepositoryProvider);
     try {
-      await ref
-          .read(vehicleRepositoryProvider)
-          .create(
-            displayName: _displayName.text.trim(),
-            currentMileage: int.parse(_mileage.text.trim()),
-            manufacturer: _nullIfBlank(_manufacturer.text),
-            model: _nullIfBlank(_model.text),
-            modelYear: int.tryParse(_modelYear.text.trim()),
-            licensePlate: _nullIfBlank(_licensePlate.text),
-          );
+      if (widget.isEditing) {
+        await repository.update(
+          id: widget.vehicleId!,
+          displayName: _displayName.text.trim(),
+          manufacturer: _nullIfBlank(_manufacturer.text),
+          model: _nullIfBlank(_model.text),
+          modelYear: int.tryParse(_modelYear.text.trim()),
+          licensePlate: _nullIfBlank(_licensePlate.text),
+        );
+      } else {
+        final id = await repository.create(
+          displayName: _displayName.text.trim(),
+          currentMileage: int.parse(_mileage.text.trim()),
+          manufacturer: _nullIfBlank(_manufacturer.text),
+          model: _nullIfBlank(_model.text),
+          modelYear: int.tryParse(_modelYear.text.trim()),
+          licensePlate: _nullIfBlank(_licensePlate.text),
+        );
+        // A newly added vehicle is the one the user wants to look at.
+        await repository.select(id);
+      }
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -76,8 +123,12 @@ class _VehicleRegistrationPageState
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
-      appBar: AppBar(title: const Text('차량 등록')),
+      appBar: AppBar(title: Text(widget.isEditing ? '차량 정보 수정' : '차량 등록')),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -85,7 +136,7 @@ class _VehicleRegistrationPageState
           children: [
             TextFormField(
               controller: _displayName,
-              autofocus: true,
+              autofocus: !widget.isEditing,
               textInputAction: TextInputAction.next,
               decoration: const InputDecoration(
                 labelText: '차량 이름',
@@ -97,18 +148,19 @@ class _VehicleRegistrationPageState
                   : null,
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _mileage,
-              textInputAction: TextInputAction.next,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                labelText: '현재 주행거리 (km)',
-                hintText: '예) 32000',
-                border: OutlineInputBorder(),
+            if (!widget.isEditing)
+              TextFormField(
+                controller: _mileage,
+                textInputAction: TextInputAction.next,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: '현재 주행거리 (km)',
+                  hintText: '예) 32000',
+                  border: OutlineInputBorder(),
+                ),
+                validator: _validateMileage,
               ),
-              validator: _validateMileage,
-            ),
             const SizedBox(height: 24),
             Text(
               '아래는 선택 사항입니다',
@@ -158,6 +210,15 @@ class _VehicleRegistrationPageState
                 border: OutlineInputBorder(),
               ),
             ),
+            if (widget.isEditing) ...[
+              const SizedBox(height: 16),
+              Text(
+                '주행거리는 홈 화면에서 수정합니다.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ],
         ),
       ),

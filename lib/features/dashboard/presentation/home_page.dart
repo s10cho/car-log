@@ -25,7 +25,10 @@ class HomePage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(vehicleAsync.value?.displayName ?? '홈'),
+        title: switch (vehicleAsync.value) {
+          final Vehicle vehicle => _VehicleSelectorTitle(vehicle: vehicle),
+          null => const Text('홈'),
+        },
         actions: [
           if (config.isDev)
             Padding(
@@ -54,6 +57,35 @@ class HomePage extends ConsumerWidget {
               icon: const Icon(Icons.add),
               label: const Text('기록'),
             ),
+    );
+  }
+}
+
+/// The app bar title doubles as the vehicle switcher: the name of the car you
+/// are looking at, and a way to get to the others.
+class _VehicleSelectorTitle extends StatelessWidget {
+  const _VehicleSelectorTitle({required this.vehicle});
+
+  final Vehicle vehicle;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => context.pushNamed(AppRoutes.vehicleListName),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(vehicle.displayName, overflow: TextOverflow.ellipsis),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.expand_more, size: 20),
+          ],
+        ),
+      ),
     );
   }
 }

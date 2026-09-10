@@ -7,7 +7,8 @@ import '../../features/maintenance/presentation/add_maintenance_page.dart';
 import '../../features/maintenance/presentation/maintenance_interval_page.dart';
 import '../../features/maintenance/presentation/record_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
-import '../../features/vehicle/presentation/vehicle_registration_page.dart';
+import '../../features/vehicle/presentation/vehicle_form_page.dart';
+import '../../features/vehicle/presentation/vehicle_list_page.dart';
 import 'app_routes.dart';
 import 'app_shell.dart';
 
@@ -54,10 +55,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(
+        path: AppRoutes.vehicleListPath,
+        name: AppRoutes.vehicleListName,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const VehicleListPage(),
+      ),
+      GoRoute(
         path: AppRoutes.addVehiclePath,
         name: AppRoutes.addVehicleName,
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const VehicleRegistrationPage(),
+        builder: (context, state) => const VehicleFormPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.editVehiclePath,
+        name: AppRoutes.editVehicleName,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => VehicleFormPage(
+          vehicleId: int.parse(state.pathParameters['vehicleId']!),
+        ),
       ),
       GoRoute(
         path: AppRoutes.addMaintenancePath,

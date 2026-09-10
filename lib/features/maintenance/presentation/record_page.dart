@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../dashboard/presentation/home_page.dart' show MaintenanceRecordTile;
+import '../../vehicle/data/vehicle_repository.dart';
 import '../data/maintenance_repository.dart';
 
 /// The full maintenance history for the current vehicle.
@@ -15,7 +16,23 @@ class RecordPage extends ConsumerWidget {
     final typeName = ref.watch(engineOilStatusProvider).value?.typeName;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('기록')),
+      appBar: AppBar(
+        title: const Text('기록'),
+        // Records are per vehicle, so say which one is being listed.
+        bottom: switch (ref.watch(currentVehicleProvider).value?.displayName) {
+          final String name => PreferredSize(
+            preferredSize: const Size.fromHeight(28),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Text(name, style: theme.textTheme.bodyMedium),
+              ),
+            ),
+          ),
+          null => null,
+        },
+      ),
       body: switch (recordsAsync) {
         AsyncValue(hasError: true) => Center(
           child: Padding(

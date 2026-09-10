@@ -27,7 +27,9 @@ void main() {
   Widget app(ProviderContainer scope) =>
       UncontrolledProviderScope(container: scope, child: const CarLogApp());
 
-  Future<void> settle(WidgetTester tester, {int frames = 20}) async {
+  /// Route transitions and the first database read take longer on a device
+  /// than in a widget test, so this pumps generously.
+  Future<void> settle(WidgetTester tester, {int frames = 40}) async {
     for (var i = 0; i < frames; i++) {
       await tester.pump(const Duration(milliseconds: 20));
     }
@@ -126,6 +128,68 @@ void main() {
     await settle(tester);
 
     expect(find.text('38,000 km'), findsOneWidget);
+  });
+
+  testWidgets('a second vehicle keeps its own odometer and records', (
+    tester,
+  ) async {
+    final scope = container();
+    addTearDown(scope.dispose);
+
+    await tester.pumpWidget(app(scope));
+    await settle(tester);
+
+    // 차량 선택기 → 차량 추가.
+    await tester.tap(find.byIcon(Icons.expand_more));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(OutlinedButton, '차량 추가'));
+    await settle(tester);
+    await tester.enterText(find.widgetWithText(TextFormField, '차량 이름'), '카니발');
+    await tester.enterText(
+      find.widgetWithText(TextFormField, '현재 주행거리 (km)'),
+      '12000',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, '저장'));
+    await settle(tester);
+    await tester.tap(find.byType(BackButton));
+    await settle(tester);
+
+    // 새 차량이 선택되어 있고, 기록은 비어 있다.
+    expect(find.text('카니발'), findsOneWidget);
+    expect(find.text('12,000 km'), findsOneWidget);
+    expect(find.text('아직 기록이 없어 다음 교체 시기를 계산할 수 없습니다.'), findsOneWidget);
+
+    // 아반떼로 되돌리면 그 차의 상태가 그대로 보인다.
+    await tester.tap(find.byIcon(Icons.expand_more));
+    await settle(tester);
+    await tester.tap(find.text('내 아반떼'));
+    await settle(tester);
+
+    expect(find.text('33,000 km'), findsWidgets);
+    expect(find.text('38,000 km'), findsOneWidget);
+  });
+
+  testWidgets('deleting a vehicle takes its records with it', (tester) async {
+    final scope = container();
+    addTearDown(scope.dispose);
+
+    await tester.pumpWidget(app(scope));
+    await settle(tester);
+
+    await tester.tap(find.byIcon(Icons.expand_more));
+    await settle(tester);
+    await tester.tap(find.byIcon(Icons.adaptive.more).first);
+    await settle(tester);
+    await tester.tap(find.text('삭제'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '삭제'));
+    await settle(tester);
+    await tester.tap(find.byType(BackButton));
+    await settle(tester);
+
+    // 남은 차량은 카니발 하나.
+    expect(find.text('카니발'), findsOneWidget);
+    expect(find.text('내 아반떼'), findsNothing);
 
     await wipe(scope);
   });

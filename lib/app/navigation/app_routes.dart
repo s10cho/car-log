@@ -11,8 +11,14 @@ abstract final class AppRoutes {
 
   /// Full-screen forms live outside the bottom-navigation shell so they cover
   /// the whole screen while the user is filling them in.
+  static const String vehicleListPath = '/vehicles';
+  static const String vehicleListName = 'vehicles';
+
   static const String addVehiclePath = '/vehicle/new';
   static const String addVehicleName = 'addVehicle';
+
+  static const String editVehiclePath = '/vehicle/:vehicleId/edit';
+  static const String editVehicleName = 'editVehicle';
 
   static const String addMaintenancePath = '/maintenance/new';
   static const String addMaintenanceName = 'addMaintenance';
