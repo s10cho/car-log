@@ -8,4 +8,16 @@ abstract final class AppRoutes {
 
   static const String settingsPath = '/settings';
   static const String settingsName = 'settings';
+
+  /// Full-screen forms live outside the bottom-navigation shell so they cover
+  /// the whole screen while the user is filling them in.
+  static const String addVehiclePath = '/vehicle/new';
+  static const String addVehicleName = 'addVehicle';
+
+  static const String addMaintenancePath = '/maintenance/new';
+  static const String addMaintenanceName = 'addMaintenance';
+
+  static const String maintenanceIntervalPath =
+      '/maintenance/interval/:vehicleId';
+  static const String maintenanceIntervalName = 'maintenanceInterval';
 }

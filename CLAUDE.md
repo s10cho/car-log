@@ -84,6 +84,20 @@ provider는 그것이 만드는 대상 옆에 둔다 — repository provider는 
 **Backend를 추가하지 않는다.** 안전하게 구현할 방법이 정말 없을 때만, 이유를 먼저 문서로
 남기고 논의한다.
 
+## 테스트에서 주의할 점
+
+**`testWidgets` 안에서 Drift 스트림을 `await` 하지 않는다.** `await repo.watchX().first`
+는 영원히 멈춘다 — 스트림이 기다리는 타이머를 테스트 바인딩이 쥐고 있기 때문이다.
+Future를 돌려주는 읽기(`findById` 등)는 괜찮다. 위젯 테스트는 UI로 검증하고, 스트림
+동작은 순수 단위 테스트에서 확인한다.
+
+**위젯 테스트에서 `pumpAndSettle` 을 쓰지 않는다.** 화면이 DB를 여는 동안
+`CircularProgressIndicator` 가 떠 있으면 애니메이션이 끝나지 않아 반환되지 않는다.
+`test/support/test_app.dart` 의 `settle(tester)` 로 정해진 프레임 수만 진행시킨다.
+
+**앱은 `buildTestApp()` 으로 띄운다.** 인메모리 DB와 DEV 설정을 주입해 준다. 오버라이드
+없이 띄우면 실제 기기 DB를 열려고 하다가 실패한다.
+
 ## 검증 환경
 
 로컬 런타임 확인은 **iOS Simulator**에서 한다. 이 머신에서 Android 에뮬레이터를 띄우지
