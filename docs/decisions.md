@@ -10,9 +10,13 @@ Foundation(Slice 0) 단계에서 확정한 사항과 그 이유. 뒤집을 때�
 
 - **iOS 15.0** — Flutter 3.47 / Xcode 26의 기본값이자 하한. 더 올려도 얻는 API가 없고,
   플러그인 호환 문제만 늘어난다.
-- **Android 26 (8.0)** — Flutter 기본값 24에서 올렸다. 26부터 Notification Channel,
-  Adaptive Icon, `java.time` 을 desugaring 없이 쓸 수 있다. 알림이 MVP 기능이라
-  이 경계가 실제로 코드를 단순하게 만든다.
+- **Android 26 (8.0)** — Flutter 기본값 24에서 올렸다. 26부터 Notification Channel과
+  Adaptive Icon 을 그대로 쓸 수 있다.
+
+  > `java.time` 도 26부터 쓸 수 있지만, `flutter_local_notifications` 가 core library
+  > desugaring 을 요구해서 결국 켜야 했다(`isCoreLibraryDesugaringEnabled`). release
+  > 빌드에서만 걸리는 검사라 debug 빌드만 돌리던 CI 가 놓쳤고, 그래서 CI 의 Android
+  > 잡을 release 빌드로 바꿨다.
 
 ### 환경 분리는 `--dart-define`, 네이티브 flavor 없음
 

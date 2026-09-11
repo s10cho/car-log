@@ -49,7 +49,10 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
-      - run: flutter build apk --debug
+      # Release rather than debug: AAR metadata checks (desugaring, minSdk
+      # requirements from plugins) only run on release builds, and those are
+      # exactly the failures that would otherwise surface at deploy time.
+      - run: flutter build apk --release
 
   ios:
     name: iOS build
