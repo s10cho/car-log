@@ -68,6 +68,30 @@ git-crypt status -e     # 암호화 대상 파일 확인
 키 파일은 저장소 밖(`~/.config/git-crypt/car-log.key`)에 있다. **잃어버리면 복구할 수
 없으니 비밀번호 관리자에 백업할 것.** 자세한 내용은 [secrets/README.md](secrets/README.md).
 
+## Android 배포
+
+Android 는 이 개발 머신에서 실행하지 않고 Firebase App Distribution 으로 실기기에
+배포해 확인한다.
+
+```bash
+./tool/distribute_android.sh
+```
+
+필요한 것:
+
+- `git-crypt unlock` 으로 서명 키가 풀려 있을 것
+- `~/.keys/sycho-mobile/play-service-account.json` (여러 앱이 공유하는 계정 단위 키,
+  저장소에 복사하지 않는다)
+
+| | |
+| --- | --- |
+| Firebase 프로젝트 | `sycho-app-507317` |
+| App ID | `1:197519335220:android:f4e6c022de139930d0cf61` |
+| 테스터 그룹 | `sycho-testers` |
+
+GitHub Actions 의 **Distribute Android** 워크플로로도 돌릴 수 있다. 수동 트리거
+전용이다 — push 마다 배포하면 테스터에게 계속 알림이 간다.
+
 ## 구조
 
 ```
