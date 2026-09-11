@@ -10,6 +10,7 @@ import '../../../core/formatting/app_formats.dart';
 import '../../maintenance/data/maintenance_repository.dart';
 import '../../maintenance/domain/maintenance_schedule.dart';
 import '../../maintenance/domain/maintenance_status.dart';
+import '../../maintenance/presentation/maintenance_record_tile.dart';
 import '../../vehicle/data/vehicle_repository.dart';
 
 /// The screen the app opens on: what needs doing, and how to record what was
@@ -426,35 +427,6 @@ class _UrgencyChip extends StatelessWidget {
         label,
         style: Theme.of(context).textTheme.labelMedium
             ?.copyWith(color: foreground),
-      ),
-    );
-  }
-}
-
-/// One row in a maintenance record list. Shared by the home and 기록 screens.
-class MaintenanceRecordTile extends StatelessWidget {
-  const MaintenanceRecordTile({required this.record, this.typeName, super.key});
-
-  final MaintenanceRecord record;
-  final String? typeName;
-
-  @override
-  Widget build(BuildContext context) {
-    final subtitle = <String>[
-      formatKilometres(record.mileage),
-      if (record.cost case final int cost) formatWon(cost),
-      if (record.shopName case final String shop) shop,
-    ].join(' · ');
-
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: const Icon(Icons.build_outlined),
-      title: Text(typeName ?? '정비'),
-      subtitle: Text(subtitle),
-      trailing: Text(
-        formatDate(record.maintenanceDate),
-        style: Theme.of(context).textTheme.bodySmall
-            ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     );
   }

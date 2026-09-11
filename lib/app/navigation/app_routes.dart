@@ -27,6 +27,9 @@ abstract final class AppRoutes {
       '/maintenance/interval/:vehicleId/:typeId';
   static const String maintenanceIntervalName = 'maintenanceInterval';
 
+  static const String editMaintenancePath = '/maintenance/:recordId/edit';
+  static const String editMaintenanceName = 'editMaintenance';
+
   static const String maintenanceDetailPath =
       '/maintenance/detail/:vehicleId/:typeId';
   static const String maintenanceDetailName = 'maintenanceDetail';

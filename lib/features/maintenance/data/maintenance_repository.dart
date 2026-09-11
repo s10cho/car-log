@@ -146,6 +146,154 @@ class MaintenanceRepository {
     }
   }
 
+  /// One record, or null when it has been deleted.
+  Future<MaintenanceRecord?> findRecord(int recordId) {
+    return (_database.select(
+      _database.maintenanceRecords,
+    )..where((r) => r.id.equals(recordId))).getSingleOrNull();
+  }
+
+  /// Applies edits to a record.
+  ///
+  /// [receipt] attaches a new file, replacing whatever was there.
+  /// [removeReceipt] drops the existing one. Passing both is a programming
+  /// error — the caller has to decide which it means.
+  Future<void> updateRecord({
+    required int recordId,
+    required int maintenanceTypeId,
+    required DateTime maintenanceDate,
+    required int mileage,
+    int? cost,
+    String? shopName,
+    String? memo,
+    PickedReceipt? receipt,
+    bool removeReceipt = false,
+    DateTime? now,
+  }) async {
+    assert(
+      receipt == null || !removeReceipt,
+      'Replacing and removing a receipt at once is ambiguous',
+    );
+
+    final timestamp = now ?? DateTime.now();
+    final current = await findRecord(recordId);
+    if (current == null) {
+      throw LocalDatabaseException(
+        'Maintenance record $recordId no longer exists',
+      );
+    }
+    final vehicleId = current.vehicleId;
+
+    final existing = await receiptFor(recordId);
+    final storedPath = receipt == null
+        ? null
+        : await _receipts.save(receipt.file);
+
+    try {
+      await _database.transaction(() async {
+        int? receiptId;
+        if (storedPath != null) {
+          receiptId = await _database
+              .into(_database.receiptAssets)
+              .insert(
+                ReceiptAssetsCompanion.insert(
+                  relativePath: storedPath,
+                  fileName: receipt!.fileName,
+                  mimeType: receipt.mimeType,
+                  createdAt: timestamp,
+                ),
+              );
+        }
+
+        await (_database.update(
+          _database.maintenanceRecords,
+        )..where((r) => r.id.equals(recordId))).write(
+          MaintenanceRecordsCompanion(
+            maintenanceTypeId: Value(maintenanceTypeId),
+            maintenanceDate: Value(maintenanceDate),
+            mileage: Value(mileage),
+            cost: Value(cost),
+            shopName: Value(shopName),
+            memo: Value(memo),
+            receiptAssetId: switch ((receiptId, removeReceipt)) {
+              (final int id, _) => Value(id),
+              (null, true) => const Value(null),
+              (null, false) => const Value.absent(),
+            },
+            updatedAt: Value(timestamp),
+          ),
+        );
+
+        // A corrected reading moves the odometer forward but never back —
+        // the same rule the original record followed.
+        await (_database.update(_database.vehicles)..where(
+              (v) =>
+                  v.id.equals(vehicleId) &
+                  v.currentMileage.isSmallerThanValue(mileage),
+            ))
+            .write(
+              VehiclesCompanion(
+                currentMileage: Value(mileage),
+                mileageUpdatedAt: Value(timestamp),
+                updatedAt: Value(timestamp),
+              ),
+            );
+
+        // The old asset row is only unlinked above; drop it so it does not
+        // linger with nothing pointing at it.
+        if (existing != null && (receiptId != null || removeReceipt)) {
+          await (_database.delete(
+            _database.receiptAssets,
+          )..where((a) => a.id.equals(existing.id))).go();
+        }
+      });
+    } on Object catch (error, stackTrace) {
+      if (storedPath != null) {
+        await _receipts.delete(storedPath);
+      }
+      throw LocalDatabaseException(
+        'Failed to update maintenance record $recordId',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    // Only once the database has committed: an orphaned row is recoverable,
+    // a deleted file is not.
+    if (existing != null && (storedPath != null || removeReceipt)) {
+      await _receipts.delete(existing.relativePath);
+    }
+  }
+
+  /// Deletes a record and the receipt file that belonged to it.
+  Future<void> deleteRecord(int recordId) async {
+    final existing = await receiptFor(recordId);
+
+    try {
+      await _database.transaction(() async {
+        await (_database.delete(
+          _database.maintenanceRecords,
+        )..where((r) => r.id.equals(recordId))).go();
+
+        if (existing != null) {
+          await (_database.delete(
+            _database.receiptAssets,
+          )..where((a) => a.id.equals(existing.id))).go();
+        }
+      });
+    } on Object catch (error, stackTrace) {
+      throw LocalDatabaseException(
+        'Failed to delete maintenance record $recordId',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    if (existing != null) {
+      await _receipts.delete(existing.relativePath);
+    }
+  }
+
   /// The receipt attached to a record, if any.
   Future<ReceiptAsset?> receiptFor(int recordId) async {
     final record = await (_database.select(

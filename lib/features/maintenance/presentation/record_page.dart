@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../dashboard/presentation/home_page.dart' show MaintenanceRecordTile;
 import '../../vehicle/data/vehicle_repository.dart';
 import '../data/maintenance_repository.dart';
 import '../domain/maintenance_status.dart';
+import 'maintenance_record_tile.dart';
 
 /// The full maintenance history for the current vehicle.
 class RecordPage extends ConsumerWidget {

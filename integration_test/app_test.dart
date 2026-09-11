@@ -1,7 +1,7 @@
 import 'package:car_log/app/app.dart';
 import 'package:car_log/app/config/app_config.dart';
 import 'package:car_log/core/database/database_providers.dart';
-import 'package:car_log/features/maintenance/presentation/add_maintenance_page.dart';
+import 'package:car_log/features/maintenance/presentation/maintenance_record_form_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -87,7 +87,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, '저장'));
     await settle(tester);
 
-    expect(find.byType(AddMaintenancePage), findsNothing);
+    expect(find.byType(MaintenanceRecordFormPage), findsNothing);
     // 33,000 + 10,000 km 기본 주기.
     expect(find.text('43,000 km'), findsOneWidget);
     expect(find.text('33,000 km'), findsWidgets);
@@ -271,6 +271,39 @@ void main() {
 
     await tester.tapAt(const Offset(200, 100));
     await settle(tester);
+  });
+
+  testWidgets('a record can be edited and deleted', (tester) async {
+    final scope = container();
+    addTearDown(scope.dispose);
+
+    await tester.pumpWidget(app(scope));
+    await settle(tester);
+
+    // 기록 탭에서 기록을 열어 주행거리를 고친다.
+    await tester.tap(find.byIcon(Icons.receipt_long_outlined));
+    await settle(tester);
+    await tester.tap(find.byType(ListTile).first);
+    await settle(tester);
+    expect(find.text('기록 수정'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, '정비 시 주행거리 (km)'),
+      '39000',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, '저장'));
+    await settle(tester);
+    expect(find.textContaining('39,000 km'), findsWidgets);
+
+    // 같은 기록을 지운다.
+    await tester.tap(find.byType(ListTile).first);
+    await settle(tester);
+    await tester.tap(find.byTooltip('기록 삭제'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '삭제'));
+    await settle(tester);
+
+    expect(find.text('기록 수정'), findsNothing);
   });
 
   testWidgets('reminders start switched off', (tester) async {

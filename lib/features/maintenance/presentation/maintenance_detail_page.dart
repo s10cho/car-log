@@ -4,8 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/navigation/app_routes.dart';
 import '../../../core/formatting/app_formats.dart';
-import '../../../core/database/app_database.dart';
-import '../../receipt/presentation/receipt_view.dart';
+import 'maintenance_record_tile.dart';
 import '../data/maintenance_repository.dart';
 import '../domain/maintenance_schedule.dart';
 import '../domain/maintenance_status.dart';
@@ -90,7 +89,11 @@ class MaintenanceDetailPage extends ConsumerWidget {
             )
           else
             for (final record in records)
-              _RecordWithReceipt(record: record, typeName: status.typeName),
+              MaintenanceRecordTile(
+                record: record,
+                typeName: status.typeName,
+                showReceiptAction: true,
+              ),
         ],
       ),
     );
@@ -152,59 +155,4 @@ String _intervalLabel(MaintenanceInterval interval) {
     if (interval.months case final int months) '$months개월',
   ];
   return parts.isEmpty ? '설정 없음' : parts.join(' 또는 ');
-}
-
-/// A record row that also offers its receipt, when one is attached.
-class _RecordWithReceipt extends ConsumerWidget {
-  const _RecordWithReceipt({required this.record, required this.typeName});
-
-  final MaintenanceRecord record;
-  final String typeName;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final subtitle = <String>[
-      formatKilometres(record.mileage),
-      if (record.cost case final int cost) formatWon(cost),
-      if (record.shopName case final String shop) shop,
-    ].join(' · ');
-
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: const Icon(Icons.build_outlined),
-      title: Text(typeName),
-      subtitle: Text(subtitle),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            formatDate(record.maintenanceDate),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          if (record.receiptAssetId != null)
-            IconButton(
-              icon: const Icon(Icons.receipt_long_outlined),
-              tooltip: '영수증 보기',
-              onPressed: () => _openReceipt(context, ref),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _openReceipt(BuildContext context, WidgetRef ref) async {
-    final asset = await ref
-        .read(maintenanceRepositoryProvider)
-        .receiptFor(record.id);
-    if (asset == null || !context.mounted) {
-      return;
-    }
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => ReceiptViewPage(asset: asset),
-      ),
-    );
-  }
 }

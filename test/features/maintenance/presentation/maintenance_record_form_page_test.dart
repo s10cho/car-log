@@ -1,4 +1,4 @@
-import 'package:car_log/features/maintenance/presentation/add_maintenance_page.dart';
+import 'package:car_log/features/maintenance/presentation/maintenance_record_form_page.dart';
 import 'package:car_log/features/vehicle/data/vehicle_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,7 +38,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, '저장'));
     await settle(tester);
 
-    expect(find.byType(AddMaintenancePage), findsNothing);
+    expect(find.byType(MaintenanceRecordFormPage), findsNothing);
     expect(find.text('33,000 km · 80,000원 · 동네카센터'), findsOneWidget);
     expect(find.text('43,000 km'), findsOneWidget);
   });
@@ -63,7 +63,7 @@ void main() {
     await settle(tester);
 
     expect(find.text('주행거리를 입력해 주세요'), findsOneWidget);
-    expect(find.byType(AddMaintenancePage), findsOneWidget);
+    expect(find.byType(MaintenanceRecordFormPage), findsOneWidget);
   });
 
   testWidgets('shows the current odometer as a hint', (tester) async {

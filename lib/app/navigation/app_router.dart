@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/dashboard/presentation/home_page.dart';
-import '../../features/maintenance/presentation/add_maintenance_page.dart';
+import '../../features/maintenance/presentation/maintenance_record_form_page.dart';
 import '../../features/maintenance/presentation/maintenance_detail_page.dart';
 import '../../features/maintenance/presentation/maintenance_interval_page.dart';
 import '../../features/maintenance/presentation/maintenance_types_page.dart';
@@ -81,7 +81,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.addMaintenancePath,
         name: AppRoutes.addMaintenanceName,
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const AddMaintenancePage(),
+        builder: (context, state) => const MaintenanceRecordFormPage(),
       ),
       GoRoute(
         path: AppRoutes.maintenanceIntervalPath,
@@ -90,6 +90,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => MaintenanceIntervalPage(
           vehicleId: int.parse(state.pathParameters['vehicleId']!),
           typeId: int.parse(state.pathParameters['typeId']!),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.editMaintenancePath,
+        name: AppRoutes.editMaintenanceName,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => MaintenanceRecordFormPage(
+          recordId: int.parse(state.pathParameters['recordId']!),
         ),
       ),
       GoRoute(

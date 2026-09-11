@@ -12,18 +12,24 @@ import '../data/maintenance_repository.dart';
 
 /// Records one completed service.
 ///
-/// Slice 1 covers 엔진오일 only; the item picker arrives with the rest of the
-/// catalogue in Slice 3. Date and mileage are required because the next due
-/// point is projected from them — everything else is optional so that the
-/// common case stays a ten-second job.
-class AddMaintenancePage extends ConsumerStatefulWidget {
-  const AddMaintenancePage({super.key});
+/// Date and mileage are required because the next due point is projected from
+/// them — everything else is optional so that the common case stays a
+/// ten-second job.
+class MaintenanceRecordFormPage extends ConsumerStatefulWidget {
+  const MaintenanceRecordFormPage({this.recordId, super.key});
+
+  /// Null when adding, set when editing.
+  final int? recordId;
+
+  bool get isEditing => recordId != null;
 
   @override
-  ConsumerState<AddMaintenancePage> createState() => _AddMaintenancePageState();
+  ConsumerState<MaintenanceRecordFormPage> createState() =>
+      _MaintenanceRecordFormPageState();
 }
 
-class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
+class _MaintenanceRecordFormPageState
+    extends ConsumerState<MaintenanceRecordFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _mileage = TextEditingController();
   final _cost = TextEditingController();
@@ -35,7 +41,41 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
   /// Null until the user picks one; the build falls back to 엔진오일.
   int? _typeId;
   PickedReceipt? _receipt;
+
+  /// The receipt already stored against the record being edited.
+  ReceiptAsset? _existingReceipt;
+  bool _removeReceipt = false;
+  bool _loading = false;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isEditing) {
+      _loading = true;
+      _load();
+    }
+  }
+
+  Future<void> _load() async {
+    final repository = ref.read(maintenanceRepositoryProvider);
+    final record = await repository.findRecord(widget.recordId!);
+    final receipt = await repository.receiptFor(widget.recordId!);
+    if (!mounted) {
+      return;
+    }
+
+    if (record != null) {
+      _typeId = record.maintenanceTypeId;
+      _date = record.maintenanceDate;
+      _mileage.text = '${record.mileage}';
+      _cost.text = record.cost?.toString() ?? '';
+      _shopName.text = record.shopName ?? '';
+      _memo.text = record.memo ?? '';
+      _existingReceipt = receipt;
+    }
+    setState(() => _loading = false);
+  }
 
   @override
   void dispose() {
@@ -66,18 +106,31 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
     setState(() => _saving = true);
 
     try {
-      await ref
-          .read(maintenanceRepositoryProvider)
-          .addRecord(
-            vehicleId: vehicle.id,
-            maintenanceTypeId: typeId,
-            maintenanceDate: _date,
-            mileage: int.parse(_mileage.text.trim()),
-            cost: int.tryParse(_cost.text.trim()),
-            shopName: _nullIfBlank(_shopName.text),
-            memo: _nullIfBlank(_memo.text),
-            receipt: _receipt,
-          );
+      final repository = ref.read(maintenanceRepositoryProvider);
+      if (widget.isEditing) {
+        await repository.updateRecord(
+          recordId: widget.recordId!,
+          maintenanceTypeId: typeId,
+          maintenanceDate: _date,
+          mileage: int.parse(_mileage.text.trim()),
+          cost: int.tryParse(_cost.text.trim()),
+          shopName: _nullIfBlank(_shopName.text),
+          memo: _nullIfBlank(_memo.text),
+          receipt: _receipt,
+          removeReceipt: _removeReceipt,
+        );
+      } else {
+        await repository.addRecord(
+          vehicleId: vehicle.id,
+          maintenanceTypeId: typeId,
+          maintenanceDate: _date,
+          mileage: int.parse(_mileage.text.trim()),
+          cost: int.tryParse(_cost.text.trim()),
+          shopName: _nullIfBlank(_shopName.text),
+          memo: _nullIfBlank(_memo.text),
+          receipt: _receipt,
+        );
+      }
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -91,6 +144,45 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
     }
   }
 
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('이 기록을 삭제할까요?'),
+        content: const Text('첨부한 영수증도 함께 삭제됩니다. 되돌릴 수 없습니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (!(confirmed ?? false) || !mounted) {
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(maintenanceRepositoryProvider)
+          .deleteRecord(widget.recordId!);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } on Object {
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('기록을 삭제하지 못했습니다.')));
+      }
+    }
+  }
+
   Future<void> _pickReceipt() async {
     final source = await showReceiptSourceSheet(context);
     if (source == null || !mounted) {
@@ -100,7 +192,10 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
     try {
       final picked = await ref.read(receiptPickerProvider).pick(source);
       if (picked != null && mounted) {
-        setState(() => _receipt = picked);
+        setState(() {
+          _receipt = picked;
+          _removeReceipt = false;
+        });
       }
     } on Object {
       if (mounted) {
@@ -120,7 +215,7 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
     final vehicle = ref.watch(currentVehicleProvider).value;
     final types = ref.watch(maintenanceTypesProvider).value;
 
-    if (vehicle == null || types == null || types.isEmpty) {
+    if (_loading || vehicle == null || types == null || types.isEmpty) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
@@ -135,7 +230,17 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
             .id;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('정비 기록')),
+      appBar: AppBar(
+        title: Text(widget.isEditing ? '기록 수정' : '정비 기록'),
+        actions: [
+          if (widget.isEditing)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: '기록 삭제',
+              onPressed: _saving ? null : _delete,
+            ),
+        ],
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -181,8 +286,14 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
             const SizedBox(height: 16),
             _ReceiptField(
               receipt: _receipt,
+              existing: _removeReceipt ? null : _existingReceipt,
               onPick: _pickReceipt,
-              onClear: () => setState(() => _receipt = null),
+              onClear: () => setState(() {
+                _receipt = null;
+                // Clearing a stored receipt has to be remembered: the form
+                // only tells the repository to remove it on save.
+                _removeReceipt = _existingReceipt != null;
+              }),
             ),
             const SizedBox(height: 24),
             Text(
@@ -265,11 +376,17 @@ String? _validateMileage(String? value) {
 class _ReceiptField extends StatelessWidget {
   const _ReceiptField({
     required this.receipt,
+    required this.existing,
     required this.onPick,
     required this.onClear,
   });
 
+  /// A file the user just chose, which replaces [existing] on save.
   final PickedReceipt? receipt;
+
+  /// What is already stored against the record being edited.
+  final ReceiptAsset? existing;
+
   final VoidCallback onPick;
   final VoidCallback onClear;
 
@@ -277,6 +394,31 @@ class _ReceiptField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final attached = receipt;
+
+    if (attached == null && existing != null) {
+      return Card(
+        child: ListTile(
+          leading: const Icon(Icons.receipt_long_outlined),
+          title: Text(
+            existing!.fileName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text('첨부됨', style: theme.textTheme.bodySmall),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextButton(onPressed: onPick, child: const Text('교체')),
+              IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: '첨부 삭제',
+                onPressed: onClear,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     if (attached == null) {
       return OutlinedButton.icon(
