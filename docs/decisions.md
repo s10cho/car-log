@@ -124,6 +124,22 @@ PDF 영수증도 저장은 하지만 앱에 문서 렌더러가 없어 미리 �
 이름과 함께 "미리 볼 수 없습니다"라고 알린다. 보여줄 수 없는 것을 보여주는 척하는 것보다
 낫고, 필요해지면 뷰어와 함께 도입한다.
 
+### 업로드 서명 키는 저장소 안에 git-crypt 로 둔다
+
+`android/upload-keystore.jks` 와 `android/key.properties` 를 암호화해서 커밋한다.
+`flutter create` 가 넣어 둔 `android/.gitignore` 의 `key.properties` / `**/*.jks` 줄은
+지웠다 — ignore 되면 추적 자체가 안 된다.
+
+이유: 서명 키를 잃으면 같은 앱을 업데이트할 수 없다. 저장소에 암호화해서 두면 백업이
+자동으로 따라오고, 기기를 바꿔도 clone + `git-crypt unlock` 이면 끝난다. 별도로 챙겨야
+하는 파일이 하나 줄어든다.
+
+비밀번호는 생성 시 무작위로 만들어 `key.properties` 안에만 있다. 즉 **git-crypt 키가
+모든 것을 여는 하나의 비밀**이 된다. 그 키를 잃으면 서명 키도 함께 잃는다.
+
+키가 없는 클론(잠금 해제 전, CI 의 PR 빌드)에서는 Gradle 이 debug 키로 서명해 빌드는
+통과시킨다. 그래야 외부 기여자나 잠금 없는 CI 에서도 컴파일 검증이 돌아간다.
+
 ### Android 검증은 Firebase App Distribution
 
 개발 머신에서 Android 에뮬레이터를 돌리지 않는다. 로컬 런타임 검증은 iOS Simulator에서
