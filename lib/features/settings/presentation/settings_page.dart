@@ -22,6 +22,12 @@ class SettingsPage extends ConsumerWidget {
             onTap: () => context.pushNamed(AppRoutes.reminderSettingsName),
           ),
           ListTile(
+            leading: const Icon(Icons.auto_awesome_outlined),
+            title: const Text('AI 영수증 분석'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.pushNamed(AppRoutes.aiSettingsName),
+          ),
+          ListTile(
             leading: const Icon(Icons.build_outlined),
             title: const Text('정비 항목'),
             trailing: const Icon(Icons.chevron_right),

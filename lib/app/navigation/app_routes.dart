@@ -34,6 +34,9 @@ abstract final class AppRoutes {
       '/maintenance/detail/:vehicleId/:typeId';
   static const String maintenanceDetailName = 'maintenanceDetail';
 
+  static const String aiSettingsPath = '/settings/ai';
+  static const String aiSettingsName = 'aiSettings';
+
   static const String reminderSettingsPath = '/settings/reminders';
   static const String reminderSettingsName = 'reminderSettings';
 

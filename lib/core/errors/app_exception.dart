@@ -27,3 +27,19 @@ class SecureStorageException extends AppException {
 class ReceiptStorageException extends AppException {
   const ReceiptStorageException(super.message, {super.cause, super.stackTrace});
 }
+
+/// A call to an AI provider failed.
+///
+/// Carries a message meant for the user: the analysis is optional, so the app
+/// says what went wrong and lets them type the record in by hand.
+class AiProviderException extends AppException {
+  const AiProviderException(
+    super.message, {
+    this.isCredentialProblem = false,
+    super.cause,
+    super.stackTrace,
+  });
+
+  /// Whether the key is wrong or rejected, which the user can fix in settings.
+  final bool isCredentialProblem;
+}

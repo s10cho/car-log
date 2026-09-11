@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/app_formats.dart';
+import '../../../core/errors/app_exception.dart';
+import '../../ai/data/ai_credentials.dart';
+import '../../ai/domain/receipt_analysis.dart';
+import '../../ai/presentation/ai_consent_dialog.dart';
 import '../../receipt/data/receipt_picker.dart';
 import '../../receipt/domain/picked_receipt.dart';
 import '../../receipt/presentation/receipt_picker_sheet.dart';
@@ -46,6 +50,10 @@ class _MaintenanceRecordFormPageState
   ReceiptAsset? _existingReceipt;
   bool _removeReceipt = false;
   bool _loading = false;
+  bool _analyzing = false;
+
+  /// Fields the AI filled, so the form can say which values it suggested.
+  Set<ReceiptField> _aiFilled = const {};
   bool _saving = false;
 
   @override
@@ -142,6 +150,111 @@ class _MaintenanceRecordFormPageState
         );
       }
     }
+  }
+
+  /// Reads the attached receipt and fills the form from what comes back.
+  ///
+  /// Nothing is saved: the values land in the fields for the user to check,
+  /// and any failure leaves the form exactly as it was so they can type.
+  Future<void> _analyzeReceipt(List<MaintenanceType> types) async {
+    final file = _receipt?.file;
+    if (file == null) {
+      return;
+    }
+
+    final credentials = ref.read(aiCredentialsProvider);
+    final ready = await credentials.readyProvider();
+    if (ready == null || !mounted) {
+      return;
+    }
+
+    if (!await credentials.hasConsented()) {
+      if (!mounted) {
+        return;
+      }
+      final agreed = await showAiConsentDialog(
+        context,
+        providerName: ready.provider.displayName,
+      );
+      if (!agreed || !mounted) {
+        return;
+      }
+      await credentials.recordConsent();
+    }
+
+    setState(() => _analyzing = true);
+    try {
+      final analysis = await ready.provider.analyzeReceipt(
+        image: file,
+        apiKey: ready.apiKey,
+        knownItems: [for (final type in types) type.name],
+      );
+      if (!mounted) {
+        return;
+      }
+
+      if (analysis.isEmpty) {
+        setState(() => _analyzing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('영수증에서 읽어낸 내용이 없습니다. 직접 입력해 주세요.')),
+        );
+        return;
+      }
+
+      setState(() {
+        _analyzing = false;
+        _applyAnalysis(analysis, types);
+      });
+    } on AiProviderException catch (error) {
+      if (mounted) {
+        setState(() => _analyzing = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } on Object {
+      if (mounted) {
+        setState(() => _analyzing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('영수증을 분석하지 못했습니다. 직접 입력해 주세요.')),
+        );
+      }
+    }
+  }
+
+  /// Marks a field the AI suggested, so a wrong value is obvious rather than
+  /// silently trusted.
+  String? _aiHint(ReceiptField field) =>
+      _aiFilled.contains(field) ? 'AI 가 채운 값입니다. 확인해 주세요.' : null;
+
+  void _applyAnalysis(ReceiptAnalysis analysis, List<MaintenanceType> types) {
+    if (analysis.date case final DateTime date) {
+      _date = date;
+    }
+    if (analysis.mileage case final int mileage) {
+      _mileage.text = '$mileage';
+    }
+    if (analysis.cost case final int cost) {
+      _cost.text = '$cost';
+    }
+    if (analysis.shopName case final String shop) {
+      _shopName.text = shop;
+    }
+    if (analysis.memo case final String memo) {
+      _memo.text = memo;
+    }
+
+    // The provider answers with a name, never an id. An unrecognised name is
+    // dropped rather than guessed at — the user picks the item themselves.
+    if (analysis.maintenanceTypeName case final String name) {
+      final match = types
+          .where((type) => type.name.trim() == name.trim())
+          .firstOrNull;
+      if (match != null) {
+        _typeId = match.id;
+      }
+    }
+
+    _aiFilled = analysis.filledFields;
   }
 
   Future<void> _delete() async {
@@ -280,10 +393,16 @@ class _MaintenanceRecordFormPageState
                 labelText: '정비 시 주행거리 (km)',
                 hintText: '현재 ${formatKilometres(vehicle.currentMileage)}',
                 border: const OutlineInputBorder(),
+                helperText: _aiHint(ReceiptField.mileage),
               ),
               validator: _validateMileage,
             ),
             const SizedBox(height: 16),
+            if (_receipt != null)
+              _AnalyzeReceiptButton(
+                analyzing: _analyzing,
+                onAnalyze: () => _analyzeReceipt(types),
+              ),
             _ReceiptField(
               receipt: _receipt,
               existing: _removeReceipt ? null : _existingReceipt,
@@ -308,18 +427,20 @@ class _MaintenanceRecordFormPageState
               textInputAction: TextInputAction.next,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: '비용 (원)',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                helperText: _aiHint(ReceiptField.cost),
               ),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _shopName,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: '정비소',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                helperText: _aiHint(ReceiptField.shopName),
               ),
             ),
             const SizedBox(height: 16),
@@ -455,6 +576,42 @@ class _ReceiptField extends StatelessWidget {
           tooltip: '첨부 취소',
           onPressed: onClear,
         ),
+      ),
+    );
+  }
+}
+
+/// The button that sends the attached receipt for analysis.
+class _AnalyzeReceiptButton extends ConsumerWidget {
+  const _AnalyzeReceiptButton({
+    required this.analyzing,
+    required this.onAnalyze,
+  });
+
+  final bool analyzing;
+  final VoidCallback onAnalyze;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Nothing connected means nothing to offer: the app works the same without
+    // AI, and an inert button would only raise questions.
+    final ready = ref.watch(readyAiProviderProvider).value;
+    if (ready == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: OutlinedButton.icon(
+        onPressed: analyzing ? null : onAnalyze,
+        icon: analyzing
+            ? const SizedBox.square(
+                dimension: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.auto_awesome_outlined),
+        label: Text(analyzing ? '분석 중…' : '${ready.provider.displayName} 로 분석'),
+        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
       ),
     );
   }
