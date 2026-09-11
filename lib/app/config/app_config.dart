@@ -39,13 +39,13 @@ class AppConfig {
   factory AppConfig.of(AppEnvironment environment) => switch (environment) {
     AppEnvironment.dev => const AppConfig(
       environment: AppEnvironment.dev,
-      appName: 'Car Log DEV',
+      appName: '차계부 DEV',
       databaseName: 'car_log_dev',
       verboseLogging: true,
     ),
     AppEnvironment.production => const AppConfig(
       environment: AppEnvironment.production,
-      appName: 'Car Log',
+      appName: '차계부',
       databaseName: 'car_log',
       verboseLogging: false,
     ),

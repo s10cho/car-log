@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
-        android:label="Car Log"
+        android:label="차계부"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

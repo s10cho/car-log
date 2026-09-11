@@ -43,6 +43,10 @@ class AppDatabase extends _$AppDatabase {
       await seedBuiltInTypes();
     },
     onUpgrade: (m, from, to) async {
+      // `createTable` builds the table as it is defined *today*, columns added
+      // in later versions included. So a column step must only run when the
+      // table it touches already existed — otherwise upgrading from v1 tries to
+      // add a column the create step just made, and the app fails to open.
       if (from < 2) {
         await m.createTable(vehicles);
         await m.createTable(maintenanceTypes);
@@ -53,7 +57,7 @@ class AppDatabase extends _$AppDatabase {
         // v2 seeded 엔진오일 only; the rest of the catalogue arrives here.
         await seedBuiltInTypes();
       }
-      if (from < 4) {
+      if (from >= 2 && from < 4) {
         await m.addColumn(
           vehicleMaintenanceSettings,
           vehicleMaintenanceSettings.notificationEnabled,
@@ -61,6 +65,8 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 5) {
         await m.createTable(receiptAssets);
+      }
+      if (from >= 2 && from < 5) {
         await m.addColumn(
           maintenanceRecords,
           maintenanceRecords.receiptAssetId,

@@ -1,7 +1,7 @@
 name: car_log
 description: "개인 차량의 유지보수 기록을 빠르게 남기고 확인하는 앱."
 publish_to: 'none'
-version: 0.1.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.13.3
@@ -38,6 +38,16 @@ dev_dependencies:
   drift_dev: ^2.31.0
   integration_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.4
+  sqlite3: ^3.5.2
 
 flutter:
   uses-material-design: true
+
+flutter_launcher_icons:
+  image_path: assets/icon/app_icon.png
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  adaptive_icon_background: "#00629A"
+  adaptive_icon_foreground: assets/icon/app_icon.png

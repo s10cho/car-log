@@ -48,6 +48,19 @@ class SettingsPage extends ConsumerWidget {
           ),
           const Divider(height: 1),
           ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('개인정보 처리방침'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.pushNamed(AppRoutes.privacyName),
+          ),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('앱 정보'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.pushNamed(AppRoutes.aboutName),
+          ),
+          const Divider(height: 1),
+          ListTile(
             title: const Text('환경'),
             subtitle: Text(config.environment.key),
             leading: const Icon(Icons.tune_outlined),

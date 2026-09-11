@@ -34,6 +34,12 @@ abstract final class AppRoutes {
       '/maintenance/detail/:vehicleId/:typeId';
   static const String maintenanceDetailName = 'maintenanceDetail';
 
+  static const String privacyPath = '/settings/privacy';
+  static const String privacyName = 'privacy';
+
+  static const String aboutPath = '/settings/about';
+  static const String aboutName = 'about';
+
   static const String backupPath = '/settings/backup';
   static const String backupName = 'backup';
 

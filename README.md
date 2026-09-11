@@ -92,6 +92,18 @@ Android 는 이 개발 머신에서 실행하지 않고 Firebase App Distributio
 GitHub Actions 의 **Distribute Android** 워크플로로도 돌릴 수 있다. 수동 트리거
 전용이다 — push 마다 배포하면 테스터에게 계속 알림이 간다.
 
+## 기능
+
+- 차량 여러 대 등록·전환·삭제
+- 정비 기록 작성·수정·삭제, 영수증 첨부(카메라/앨범/파일)
+- 기본 정비 항목 10종 + 사용자 정의 항목, 항목별 교체주기(거리/기간/복합)
+- 다음 교체 시기 자동 계산과 로컬 알림
+- AI 영수증 분석 (Gemini / OpenAI, 선택 사항)
+- JSON 백업 내보내기·복원
+
+핵심 기능은 네트워크 없이 동작한다. 자세한 판단 근거는
+[docs/decisions.md](docs/decisions.md) 참고.
+
 ## 구조
 
 ```
