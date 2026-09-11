@@ -272,69 +272,79 @@ class _StatusCard extends StatelessWidget {
     final due = status.due;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    status.typeName,
-                    style: theme.textTheme.titleMedium,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.pushNamed(
+          AppRoutes.maintenanceDetailName,
+          pathParameters: {
+            'vehicleId': '${vehicle.id}',
+            'typeId': '${status.typeId}',
+          },
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      status.typeName,
+                      style: theme.textTheme.titleMedium,
+                    ),
                   ),
-                ),
-                if (due != null) _UrgencyChip(urgency: due.urgency),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (!status.hasRecord)
-              Text(
-                '아직 기록이 없어 다음 교체 시기를 계산할 수 없습니다.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              )
-            else ...[
-              Text(
-                '마지막 교체 ${formatDate(status.lastServiceDate!)}'
-                ' · ${formatKilometres(status.lastServiceMileage!)}',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                  if (due != null) _UrgencyChip(urgency: due.urgency),
+                ],
               ),
               const SizedBox(height: 12),
-              if (due?.dueMileage != null)
-                _DueRow(
-                  icon: Icons.speed_outlined,
-                  label: formatKilometres(due!.dueMileage!),
-                  detail: formatRemainingDistance(due.remainingDistanceKm!),
+              if (!status.hasRecord)
+                Text(
+                  '아직 기록이 없어 다음 교체 시기를 계산할 수 없습니다.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                )
+              else ...[
+                Text(
+                  '마지막 교체 ${formatDate(status.lastServiceDate!)}'
+                  ' · ${formatKilometres(status.lastServiceMileage!)}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              if (due?.dueDate != null) ...[
-                const SizedBox(height: 6),
-                _DueRow(
-                  icon: Icons.event_outlined,
-                  label: formatDate(due!.dueDate!),
-                  detail: formatRemainingDays(due.remainingDays!),
-                ),
+                const SizedBox(height: 12),
+                if (due?.dueMileage != null)
+                  _DueRow(
+                    icon: Icons.speed_outlined,
+                    label: formatKilometres(due!.dueMileage!),
+                    detail: formatRemainingDistance(due.remainingDistanceKm!),
+                  ),
+                if (due?.dueDate != null) ...[
+                  const SizedBox(height: 6),
+                  _DueRow(
+                    icon: Icons.event_outlined,
+                    label: formatDate(due!.dueDate!),
+                    detail: formatRemainingDays(due.remainingDays!),
+                  ),
+                ],
               ],
-            ],
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () => context.pushNamed(
-                  AppRoutes.maintenanceIntervalName,
-                  pathParameters: {
-                    'vehicleId': '${vehicle.id}',
-                    'typeId': '${status.typeId}',
-                  },
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => context.pushNamed(
+                    AppRoutes.maintenanceIntervalName,
+                    pathParameters: {
+                      'vehicleId': '${vehicle.id}',
+                      'typeId': '${status.typeId}',
+                    },
+                  ),
+                  child: Text(_intervalLabel(status.interval)),
                 ),
-                child: Text(_intervalLabel(status.interval)),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

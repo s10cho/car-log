@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.file(String name) : super(driftDatabase(name: name));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -50,6 +50,12 @@ class AppDatabase extends _$AppDatabase {
       if (from < 3) {
         // v2 seeded 엔진오일 only; the rest of the catalogue arrives here.
         await seedBuiltInTypes();
+      }
+      if (from < 4) {
+        await m.addColumn(
+          vehicleMaintenanceSettings,
+          vehicleMaintenanceSettings.notificationEnabled,
+        );
       }
     },
     beforeOpen: (details) async {

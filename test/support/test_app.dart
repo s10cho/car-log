@@ -2,11 +2,13 @@ import 'package:car_log/app/app.dart';
 import 'package:car_log/app/config/app_config.dart';
 import 'package:car_log/core/database/app_database.dart';
 import 'package:car_log/core/database/database_providers.dart';
+import 'package:car_log/features/notification/data/notification_scheduler_port.dart';
 import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'fake_notification_scheduler.dart';
 import 'test_database.dart';
 
 /// Boots the real app against an in-memory database.
@@ -15,10 +17,15 @@ import 'test_database.dart';
 /// state or assert what was written.
 ({Widget app, ProviderContainer container}) buildTestApp() {
   final database = openTestDatabase();
+  final notifications = FakeNotificationScheduler();
+  addTearDown(notifications.dispose);
   final container = ProviderContainer(
     overrides: [
       appConfigProvider.overrideWithValue(AppConfig.of(AppEnvironment.dev)),
       appDatabaseProvider.overrideWithValue(database),
+      // No notification plugin in a widget test; the rules are covered by
+      // planReminders' own tests.
+      notificationSchedulerProvider.overrideWithValue(notifications),
     ],
   );
   addTearDown(container.dispose);
@@ -56,3 +63,8 @@ Future<List<MaintenanceType>> readMaintenanceTypes(
       ]))
       .get();
 }
+
+/// The stand-in scheduler behind [buildTestApp], for asserting on what the app
+/// asked the platform to schedule.
+FakeNotificationScheduler notificationsOf(ProviderContainer container) =>
+    container.read(notificationSchedulerProvider) as FakeNotificationScheduler;

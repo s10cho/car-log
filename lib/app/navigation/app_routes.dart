@@ -27,6 +27,13 @@ abstract final class AppRoutes {
       '/maintenance/interval/:vehicleId/:typeId';
   static const String maintenanceIntervalName = 'maintenanceInterval';
 
+  static const String maintenanceDetailPath =
+      '/maintenance/detail/:vehicleId/:typeId';
+  static const String maintenanceDetailName = 'maintenanceDetail';
+
+  static const String reminderSettingsPath = '/settings/reminders';
+  static const String reminderSettingsName = 'reminderSettings';
+
   static const String maintenanceTypesPath = '/maintenance/types';
   static const String maintenanceTypesName = 'maintenanceTypes';
 }

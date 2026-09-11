@@ -221,6 +221,65 @@ class MaintenanceRepository {
     );
   }
 
+  /// Every vehicle's standing for every maintenance type.
+  ///
+  /// Reminders cover all cars, not just the one on screen, so scheduling needs
+  /// the whole picture in one place.
+  Stream<List<VehicleMaintenanceStatus>> watchAllStatuses({
+    DateTime Function() clock = DateTime.now,
+  }) {
+    return _database
+        .customSelect(
+          '''
+          SELECT
+            v.id                          AS vehicle_id,
+            v.display_name                AS vehicle_name,
+            v.current_mileage             AS current_mileage,
+            t.id                          AS type_id,
+            t.name                        AS type_name,
+            t.is_built_in                 AS is_built_in,
+            COALESCE(s.distance_interval, t.default_distance_interval)
+                                          AS distance_interval,
+            COALESCE(s.time_interval_months, t.default_time_interval_months)
+                                          AS time_interval_months,
+            COALESCE(s.notification_enabled, 1)
+                                          AS notification_enabled,
+            r.maintenance_date            AS last_service_date,
+            r.mileage                     AS last_service_mileage
+          FROM vehicles v
+          CROSS JOIN maintenance_types t
+          LEFT JOIN vehicle_maintenance_settings s
+            ON s.vehicle_id = v.id AND s.maintenance_type_id = t.id
+          LEFT JOIN maintenance_records r ON r.id = (
+            SELECT r2.id FROM maintenance_records r2
+            WHERE r2.vehicle_id = v.id AND r2.maintenance_type_id = t.id
+            ORDER BY r2.maintenance_date DESC, r2.id DESC
+            LIMIT 1
+          )
+          ORDER BY v.created_at ASC, t.is_built_in DESC, t.id ASC
+          ''',
+          readsFrom: {
+            _database.vehicles,
+            _database.maintenanceTypes,
+            _database.vehicleMaintenanceSettings,
+            _database.maintenanceRecords,
+          },
+        )
+        .watch()
+        .map(
+          (rows) => rows
+              .map(
+                (row) => (
+                  vehicleId: row.read<int>('vehicle_id'),
+                  vehicleName: row.read<String>('vehicle_name'),
+                  notificationEnabled: row.read<bool>('notification_enabled'),
+                  status: _toStatus(row, clock),
+                ),
+              )
+              .toList(),
+        );
+  }
+
   /// All maintenance types, built-in first.
   Stream<List<MaintenanceType>> watchTypes() {
     return (_database.select(_database.maintenanceTypes)..orderBy([
@@ -279,6 +338,31 @@ class MaintenanceRepository {
     } on Object catch (error, stackTrace) {
       throw LocalDatabaseException(
         'Failed to update maintenance type $id',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Turns reminders on or off for one item on one vehicle.
+  Future<void> setNotificationEnabled({
+    required int vehicleId,
+    required int maintenanceTypeId,
+    required bool enabled,
+  }) async {
+    try {
+      await _database
+          .into(_database.vehicleMaintenanceSettings)
+          .insertOnConflictUpdate(
+            VehicleMaintenanceSettingsCompanion.insert(
+              vehicleId: vehicleId,
+              maintenanceTypeId: maintenanceTypeId,
+              notificationEnabled: Value(enabled),
+            ),
+          );
+    } on Object catch (error, stackTrace) {
+      throw LocalDatabaseException(
+        'Failed to change reminder setting for vehicle $vehicleId',
         cause: error,
         stackTrace: stackTrace,
       );
@@ -347,6 +431,15 @@ final engineOilTypeProvider = FutureProvider<MaintenanceType>(
   (ref) => ref.watch(maintenanceRepositoryProvider).engineOilType(),
 );
 
+/// One vehicle's standing for one maintenance type, plus whether reminders
+/// are switched on for it.
+typedef VehicleMaintenanceStatus = ({
+  int vehicleId,
+  String vehicleName,
+  bool notificationEnabled,
+  MaintenanceStatus status,
+});
+
 /// Every maintenance type's standing for the vehicle being shown.
 ///
 /// Empty when no vehicle exists yet — the first-use empty state.
@@ -373,6 +466,13 @@ final trackedMaintenanceProvider = Provider<List<MaintenanceStatus>>((ref) {
   return statuses.where((status) => status.hasRecord).toList()
     ..sort(compareByUrgency);
 });
+
+/// Every vehicle's standing for every item — what reminders are built from,
+/// and what the detail screen reads.
+final allMaintenanceStatusesProvider =
+    StreamProvider<List<VehicleMaintenanceStatus>>(
+      (ref) => ref.watch(maintenanceRepositoryProvider).watchAllStatuses(),
+    );
 
 /// All maintenance types, for the settings screen.
 final maintenanceTypesProvider = StreamProvider<List<MaintenanceType>>(

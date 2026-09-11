@@ -1450,12 +1450,27 @@ class $VehicleMaintenanceSettingsTable extends VehicleMaintenanceSettings
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _notificationEnabledMeta =
+      const VerificationMeta('notificationEnabled');
+  @override
+  late final GeneratedColumn<bool> notificationEnabled = GeneratedColumn<bool>(
+    'notification_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("notification_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     vehicleId,
     maintenanceTypeId,
     distanceInterval,
     timeIntervalMonths,
+    notificationEnabled,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1506,6 +1521,15 @@ class $VehicleMaintenanceSettingsTable extends VehicleMaintenanceSettings
         ),
       );
     }
+    if (data.containsKey('notification_enabled')) {
+      context.handle(
+        _notificationEnabledMeta,
+        notificationEnabled.isAcceptableOrUnknown(
+          data['notification_enabled']!,
+          _notificationEnabledMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1534,6 +1558,10 @@ class $VehicleMaintenanceSettingsTable extends VehicleMaintenanceSettings
         DriftSqlType.int,
         data['${effectivePrefix}time_interval_months'],
       ),
+      notificationEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}notification_enabled'],
+      )!,
     );
   }
 
@@ -1549,11 +1577,16 @@ class VehicleMaintenanceSetting extends DataClass
   final int maintenanceTypeId;
   final int? distanceInterval;
   final int? timeIntervalMonths;
+
+  /// Whether reminders are raised for this item on this vehicle.
+  /// Absent row means enabled — the default is to remind.
+  final bool notificationEnabled;
   const VehicleMaintenanceSetting({
     required this.vehicleId,
     required this.maintenanceTypeId,
     this.distanceInterval,
     this.timeIntervalMonths,
+    required this.notificationEnabled,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1566,6 +1599,7 @@ class VehicleMaintenanceSetting extends DataClass
     if (!nullToAbsent || timeIntervalMonths != null) {
       map['time_interval_months'] = Variable<int>(timeIntervalMonths);
     }
+    map['notification_enabled'] = Variable<bool>(notificationEnabled);
     return map;
   }
 
@@ -1579,6 +1613,7 @@ class VehicleMaintenanceSetting extends DataClass
       timeIntervalMonths: timeIntervalMonths == null && nullToAbsent
           ? const Value.absent()
           : Value(timeIntervalMonths),
+      notificationEnabled: Value(notificationEnabled),
     );
   }
 
@@ -1592,6 +1627,9 @@ class VehicleMaintenanceSetting extends DataClass
       maintenanceTypeId: serializer.fromJson<int>(json['maintenanceTypeId']),
       distanceInterval: serializer.fromJson<int?>(json['distanceInterval']),
       timeIntervalMonths: serializer.fromJson<int?>(json['timeIntervalMonths']),
+      notificationEnabled: serializer.fromJson<bool>(
+        json['notificationEnabled'],
+      ),
     );
   }
   @override
@@ -1602,6 +1640,7 @@ class VehicleMaintenanceSetting extends DataClass
       'maintenanceTypeId': serializer.toJson<int>(maintenanceTypeId),
       'distanceInterval': serializer.toJson<int?>(distanceInterval),
       'timeIntervalMonths': serializer.toJson<int?>(timeIntervalMonths),
+      'notificationEnabled': serializer.toJson<bool>(notificationEnabled),
     };
   }
 
@@ -1610,6 +1649,7 @@ class VehicleMaintenanceSetting extends DataClass
     int? maintenanceTypeId,
     Value<int?> distanceInterval = const Value.absent(),
     Value<int?> timeIntervalMonths = const Value.absent(),
+    bool? notificationEnabled,
   }) => VehicleMaintenanceSetting(
     vehicleId: vehicleId ?? this.vehicleId,
     maintenanceTypeId: maintenanceTypeId ?? this.maintenanceTypeId,
@@ -1619,6 +1659,7 @@ class VehicleMaintenanceSetting extends DataClass
     timeIntervalMonths: timeIntervalMonths.present
         ? timeIntervalMonths.value
         : this.timeIntervalMonths,
+    notificationEnabled: notificationEnabled ?? this.notificationEnabled,
   );
   VehicleMaintenanceSetting copyWithCompanion(
     VehicleMaintenanceSettingsCompanion data,
@@ -1634,6 +1675,9 @@ class VehicleMaintenanceSetting extends DataClass
       timeIntervalMonths: data.timeIntervalMonths.present
           ? data.timeIntervalMonths.value
           : this.timeIntervalMonths,
+      notificationEnabled: data.notificationEnabled.present
+          ? data.notificationEnabled.value
+          : this.notificationEnabled,
     );
   }
 
@@ -1643,7 +1687,8 @@ class VehicleMaintenanceSetting extends DataClass
           ..write('vehicleId: $vehicleId, ')
           ..write('maintenanceTypeId: $maintenanceTypeId, ')
           ..write('distanceInterval: $distanceInterval, ')
-          ..write('timeIntervalMonths: $timeIntervalMonths')
+          ..write('timeIntervalMonths: $timeIntervalMonths, ')
+          ..write('notificationEnabled: $notificationEnabled')
           ..write(')'))
         .toString();
   }
@@ -1654,6 +1699,7 @@ class VehicleMaintenanceSetting extends DataClass
     maintenanceTypeId,
     distanceInterval,
     timeIntervalMonths,
+    notificationEnabled,
   );
   @override
   bool operator ==(Object other) =>
@@ -1662,7 +1708,8 @@ class VehicleMaintenanceSetting extends DataClass
           other.vehicleId == this.vehicleId &&
           other.maintenanceTypeId == this.maintenanceTypeId &&
           other.distanceInterval == this.distanceInterval &&
-          other.timeIntervalMonths == this.timeIntervalMonths);
+          other.timeIntervalMonths == this.timeIntervalMonths &&
+          other.notificationEnabled == this.notificationEnabled);
 }
 
 class VehicleMaintenanceSettingsCompanion
@@ -1671,12 +1718,14 @@ class VehicleMaintenanceSettingsCompanion
   final Value<int> maintenanceTypeId;
   final Value<int?> distanceInterval;
   final Value<int?> timeIntervalMonths;
+  final Value<bool> notificationEnabled;
   final Value<int> rowid;
   const VehicleMaintenanceSettingsCompanion({
     this.vehicleId = const Value.absent(),
     this.maintenanceTypeId = const Value.absent(),
     this.distanceInterval = const Value.absent(),
     this.timeIntervalMonths = const Value.absent(),
+    this.notificationEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VehicleMaintenanceSettingsCompanion.insert({
@@ -1684,6 +1733,7 @@ class VehicleMaintenanceSettingsCompanion
     required int maintenanceTypeId,
     this.distanceInterval = const Value.absent(),
     this.timeIntervalMonths = const Value.absent(),
+    this.notificationEnabled = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : vehicleId = Value(vehicleId),
        maintenanceTypeId = Value(maintenanceTypeId);
@@ -1692,6 +1742,7 @@ class VehicleMaintenanceSettingsCompanion
     Expression<int>? maintenanceTypeId,
     Expression<int>? distanceInterval,
     Expression<int>? timeIntervalMonths,
+    Expression<bool>? notificationEnabled,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1700,6 +1751,8 @@ class VehicleMaintenanceSettingsCompanion
       if (distanceInterval != null) 'distance_interval': distanceInterval,
       if (timeIntervalMonths != null)
         'time_interval_months': timeIntervalMonths,
+      if (notificationEnabled != null)
+        'notification_enabled': notificationEnabled,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1709,6 +1762,7 @@ class VehicleMaintenanceSettingsCompanion
     Value<int>? maintenanceTypeId,
     Value<int?>? distanceInterval,
     Value<int?>? timeIntervalMonths,
+    Value<bool>? notificationEnabled,
     Value<int>? rowid,
   }) {
     return VehicleMaintenanceSettingsCompanion(
@@ -1716,6 +1770,7 @@ class VehicleMaintenanceSettingsCompanion
       maintenanceTypeId: maintenanceTypeId ?? this.maintenanceTypeId,
       distanceInterval: distanceInterval ?? this.distanceInterval,
       timeIntervalMonths: timeIntervalMonths ?? this.timeIntervalMonths,
+      notificationEnabled: notificationEnabled ?? this.notificationEnabled,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1735,6 +1790,9 @@ class VehicleMaintenanceSettingsCompanion
     if (timeIntervalMonths.present) {
       map['time_interval_months'] = Variable<int>(timeIntervalMonths.value);
     }
+    if (notificationEnabled.present) {
+      map['notification_enabled'] = Variable<bool>(notificationEnabled.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1748,6 +1806,7 @@ class VehicleMaintenanceSettingsCompanion
           ..write('maintenanceTypeId: $maintenanceTypeId, ')
           ..write('distanceInterval: $distanceInterval, ')
           ..write('timeIntervalMonths: $timeIntervalMonths, ')
+          ..write('notificationEnabled: $notificationEnabled, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3588,6 +3647,7 @@ typedef $$VehicleMaintenanceSettingsTableCreateCompanionBuilder =
       required int maintenanceTypeId,
       Value<int?> distanceInterval,
       Value<int?> timeIntervalMonths,
+      Value<bool> notificationEnabled,
       Value<int> rowid,
     });
 typedef $$VehicleMaintenanceSettingsTableUpdateCompanionBuilder =
@@ -3596,6 +3656,7 @@ typedef $$VehicleMaintenanceSettingsTableUpdateCompanionBuilder =
       Value<int> maintenanceTypeId,
       Value<int?> distanceInterval,
       Value<int?> timeIntervalMonths,
+      Value<bool> notificationEnabled,
       Value<int> rowid,
     });
 
@@ -3669,6 +3730,11 @@ class $$VehicleMaintenanceSettingsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get notificationEnabled => $composableBuilder(
+    column: $table.notificationEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$VehiclesTableFilterComposer get vehicleId {
     final $$VehiclesTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -3735,6 +3801,11 @@ class $$VehicleMaintenanceSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get notificationEnabled => $composableBuilder(
+    column: $table.notificationEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VehiclesTableOrderingComposer get vehicleId {
     final $$VehiclesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3798,6 +3869,11 @@ class $$VehicleMaintenanceSettingsTableAnnotationComposer
 
   GeneratedColumn<int> get timeIntervalMonths => $composableBuilder(
     column: $table.timeIntervalMonths,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get notificationEnabled => $composableBuilder(
+    column: $table.notificationEnabled,
     builder: (column) => column,
   );
 
@@ -3894,12 +3970,14 @@ class $$VehicleMaintenanceSettingsTableTableManager
                 Value<int> maintenanceTypeId = const Value.absent(),
                 Value<int?> distanceInterval = const Value.absent(),
                 Value<int?> timeIntervalMonths = const Value.absent(),
+                Value<bool> notificationEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VehicleMaintenanceSettingsCompanion(
                 vehicleId: vehicleId,
                 maintenanceTypeId: maintenanceTypeId,
                 distanceInterval: distanceInterval,
                 timeIntervalMonths: timeIntervalMonths,
+                notificationEnabled: notificationEnabled,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3908,12 +3986,14 @@ class $$VehicleMaintenanceSettingsTableTableManager
                 required int maintenanceTypeId,
                 Value<int?> distanceInterval = const Value.absent(),
                 Value<int?> timeIntervalMonths = const Value.absent(),
+                Value<bool> notificationEnabled = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VehicleMaintenanceSettingsCompanion.insert(
                 vehicleId: vehicleId,
                 maintenanceTypeId: maintenanceTypeId,
                 distanceInterval: distanceInterval,
                 timeIntervalMonths: timeIntervalMonths,
+                notificationEnabled: notificationEnabled,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

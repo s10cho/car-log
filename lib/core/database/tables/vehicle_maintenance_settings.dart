@@ -19,6 +19,11 @@ class VehicleMaintenanceSettings extends Table {
   IntColumn get distanceInterval => integer().nullable()();
   IntColumn get timeIntervalMonths => integer().nullable()();
 
+  /// Whether reminders are raised for this item on this vehicle.
+  /// Absent row means enabled — the default is to remind.
+  BoolColumn get notificationEnabled =>
+      boolean().withDefault(const Constant(true))();
+
   @override
   Set<Column<Object>> get primaryKey => {vehicleId, maintenanceTypeId};
 }

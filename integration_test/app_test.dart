@@ -236,6 +236,39 @@ void main() {
     // 홈에 새 항목이 상태 카드로 올라온다.
     expect(find.text('하부 코팅'), findsWidgets);
     expect(find.text('교체주기 24개월'), findsOneWidget);
+  });
+
+  testWidgets('a status card opens the maintenance detail', (tester) async {
+    final scope = container();
+    addTearDown(scope.dispose);
+
+    await tester.pumpWidget(app(scope));
+    await settle(tester);
+
+    await tester.tap(find.text('하부 코팅').first);
+    await settle(tester);
+
+    expect(find.text('이 항목의 기록'), findsOneWidget);
+    expect(find.widgetWithText(SwitchListTile, '이 항목 알림'), findsOneWidget);
+  });
+
+  testWidgets('reminders start switched off', (tester) async {
+    final scope = container();
+    addTearDown(scope.dispose);
+
+    await tester.pumpWidget(app(scope));
+    await settle(tester);
+
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(ListTile, '알림'));
+    await settle(tester);
+
+    // 실기기 권한 창을 띄우지 않도록 켜 보지는 않는다. 기본값이 꺼짐인지만 본다.
+    final toggle = tester.widget<SwitchListTile>(
+      find.widgetWithText(SwitchListTile, '정비 알림'),
+    );
+    expect(toggle.value, isFalse);
 
     await wipe(scope);
   });
