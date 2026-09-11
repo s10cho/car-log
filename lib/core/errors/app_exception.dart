@@ -22,3 +22,8 @@ class LocalDatabaseException extends AppException {
 class SecureStorageException extends AppException {
   const SecureStorageException(super.message, {super.cause, super.stackTrace});
 }
+
+/// A receipt file could not be stored, read or removed.
+class ReceiptStorageException extends AppException {
+  const ReceiptStorageException(super.message, {super.cause, super.stackTrace});
+}

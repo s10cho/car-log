@@ -43,7 +43,11 @@
 					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
 					<key>UISceneStoryboardFile</key>
 					<string>Main</string>
-				</dict>
+					<key>NSCameraUsageDescription</key>
+	<string>정비 영수증을 촬영해 기록에 첨부합니다.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>앨범에 있는 영수증 사진을 정비 기록에 첨부합니다.</string>
+</dict>
 			</array>
 		</dict>
 	</dict>

@@ -4,15 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/errors/app_exception.dart';
+import '../../receipt/data/receipt_storage.dart';
+import '../../receipt/domain/picked_receipt.dart';
 import '../../vehicle/data/vehicle_repository.dart';
 import '../domain/maintenance_schedule.dart';
 import '../domain/maintenance_status.dart';
 
 /// Reads and writes maintenance records, types and per-vehicle intervals.
 class MaintenanceRepository {
-  const MaintenanceRepository(this._database);
+  const MaintenanceRepository(this._database, this._receipts);
 
   final AppDatabase _database;
+  final ReceiptStorage _receipts;
 
   /// The built-in 엔진오일 type, seeded when the database is created.
   Future<MaintenanceType> engineOilType() async {
@@ -72,11 +75,33 @@ class MaintenanceRepository {
     int? cost,
     String? shopName,
     String? memo,
+    PickedReceipt? receipt,
     DateTime? now,
   }) async {
     final timestamp = now ?? DateTime.now();
+
+    // The file is copied in before the transaction: a failed copy should stop
+    // the record being written, and a rolled back transaction would otherwise
+    // leave a stray file behind.
+    final storedPath = receipt == null
+        ? null
+        : await _receipts.save(receipt.file);
+
     try {
       return await _database.transaction(() async {
+        final receiptId = storedPath == null
+            ? null
+            : await _database
+                  .into(_database.receiptAssets)
+                  .insert(
+                    ReceiptAssetsCompanion.insert(
+                      relativePath: storedPath,
+                      fileName: receipt!.fileName,
+                      mimeType: receipt.mimeType,
+                      createdAt: timestamp,
+                    ),
+                  );
+
         final id = await _database
             .into(_database.maintenanceRecords)
             .insert(
@@ -88,6 +113,7 @@ class MaintenanceRepository {
                 cost: Value(cost),
                 shopName: Value(shopName),
                 memo: Value(memo),
+                receiptAssetId: Value(receiptId),
                 createdAt: timestamp,
                 updatedAt: timestamp,
               ),
@@ -109,12 +135,48 @@ class MaintenanceRepository {
         return id;
       });
     } on Object catch (error, stackTrace) {
+      if (storedPath != null) {
+        await _receipts.delete(storedPath);
+      }
       throw LocalDatabaseException(
         'Failed to save maintenance record for vehicle $vehicleId',
         cause: error,
         stackTrace: stackTrace,
       );
     }
+  }
+
+  /// The receipt attached to a record, if any.
+  Future<ReceiptAsset?> receiptFor(int recordId) async {
+    final record = await (_database.select(
+      _database.maintenanceRecords,
+    )..where((r) => r.id.equals(recordId))).getSingleOrNull();
+
+    final assetId = record?.receiptAssetId;
+    if (assetId == null) {
+      return null;
+    }
+    return (_database.select(
+      _database.receiptAssets,
+    )..where((a) => a.id.equals(assetId))).getSingleOrNull();
+  }
+
+  /// Every receipt belonging to a vehicle's records.
+  ///
+  /// Deleting a vehicle cascades its records away; the files have to be removed
+  /// by hand or they sit in the documents directory forever.
+  Future<List<ReceiptAsset>> receiptsForVehicle(int vehicleId) async {
+    final query = _database.select(_database.receiptAssets).join([
+      innerJoin(
+        _database.maintenanceRecords,
+        _database.maintenanceRecords.receiptAssetId.equalsExp(
+          _database.receiptAssets.id,
+        ),
+      ),
+    ])..where(_database.maintenanceRecords.vehicleId.equals(vehicleId));
+
+    final rows = await query.get();
+    return [for (final row in rows) row.readTable(_database.receiptAssets)];
   }
 
   /// The interval in force for a vehicle: its own override if it set one,
@@ -423,7 +485,10 @@ class MaintenanceRepository {
 }
 
 final maintenanceRepositoryProvider = Provider<MaintenanceRepository>(
-  (ref) => MaintenanceRepository(ref.watch(appDatabaseProvider)),
+  (ref) => MaintenanceRepository(
+    ref.watch(appDatabaseProvider),
+    ref.watch(receiptStorageProvider),
+  ),
 );
 
 /// The built-in 엔진오일 type. Slice 3 replaces this with the full catalogue.

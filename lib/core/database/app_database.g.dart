@@ -1813,6 +1813,368 @@ class VehicleMaintenanceSettingsCompanion
   }
 }
 
+class $ReceiptAssetsTable extends ReceiptAssets
+    with TableInfo<$ReceiptAssetsTable, ReceiptAsset> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReceiptAssetsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _relativePathMeta = const VerificationMeta(
+    'relativePath',
+  );
+  @override
+  late final GeneratedColumn<String> relativePath = GeneratedColumn<String>(
+    'relative_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fileNameMeta = const VerificationMeta(
+    'fileName',
+  );
+  @override
+  late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
+    'file_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mimeTypeMeta = const VerificationMeta(
+    'mimeType',
+  );
+  @override
+  late final GeneratedColumn<String> mimeType = GeneratedColumn<String>(
+    'mime_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    relativePath,
+    fileName,
+    mimeType,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'receipt_assets';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ReceiptAsset> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('relative_path')) {
+      context.handle(
+        _relativePathMeta,
+        relativePath.isAcceptableOrUnknown(
+          data['relative_path']!,
+          _relativePathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_relativePathMeta);
+    }
+    if (data.containsKey('file_name')) {
+      context.handle(
+        _fileNameMeta,
+        fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fileNameMeta);
+    }
+    if (data.containsKey('mime_type')) {
+      context.handle(
+        _mimeTypeMeta,
+        mimeType.isAcceptableOrUnknown(data['mime_type']!, _mimeTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mimeTypeMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ReceiptAsset map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReceiptAsset(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      relativePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}relative_path'],
+      )!,
+      fileName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_name'],
+      )!,
+      mimeType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mime_type'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ReceiptAssetsTable createAlias(String alias) {
+    return $ReceiptAssetsTable(attachedDatabase, alias);
+  }
+}
+
+class ReceiptAsset extends DataClass implements Insertable<ReceiptAsset> {
+  final int id;
+
+  /// Path relative to the app documents directory, e.g. `receipts/<uuid>.jpg`.
+  final String relativePath;
+
+  /// What the user called the file, shown when it cannot be previewed.
+  final String fileName;
+  final String mimeType;
+  final DateTime createdAt;
+  const ReceiptAsset({
+    required this.id,
+    required this.relativePath,
+    required this.fileName,
+    required this.mimeType,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['relative_path'] = Variable<String>(relativePath);
+    map['file_name'] = Variable<String>(fileName);
+    map['mime_type'] = Variable<String>(mimeType);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ReceiptAssetsCompanion toCompanion(bool nullToAbsent) {
+    return ReceiptAssetsCompanion(
+      id: Value(id),
+      relativePath: Value(relativePath),
+      fileName: Value(fileName),
+      mimeType: Value(mimeType),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ReceiptAsset.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReceiptAsset(
+      id: serializer.fromJson<int>(json['id']),
+      relativePath: serializer.fromJson<String>(json['relativePath']),
+      fileName: serializer.fromJson<String>(json['fileName']),
+      mimeType: serializer.fromJson<String>(json['mimeType']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'relativePath': serializer.toJson<String>(relativePath),
+      'fileName': serializer.toJson<String>(fileName),
+      'mimeType': serializer.toJson<String>(mimeType),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ReceiptAsset copyWith({
+    int? id,
+    String? relativePath,
+    String? fileName,
+    String? mimeType,
+    DateTime? createdAt,
+  }) => ReceiptAsset(
+    id: id ?? this.id,
+    relativePath: relativePath ?? this.relativePath,
+    fileName: fileName ?? this.fileName,
+    mimeType: mimeType ?? this.mimeType,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ReceiptAsset copyWithCompanion(ReceiptAssetsCompanion data) {
+    return ReceiptAsset(
+      id: data.id.present ? data.id.value : this.id,
+      relativePath: data.relativePath.present
+          ? data.relativePath.value
+          : this.relativePath,
+      fileName: data.fileName.present ? data.fileName.value : this.fileName,
+      mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReceiptAsset(')
+          ..write('id: $id, ')
+          ..write('relativePath: $relativePath, ')
+          ..write('fileName: $fileName, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, relativePath, fileName, mimeType, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReceiptAsset &&
+          other.id == this.id &&
+          other.relativePath == this.relativePath &&
+          other.fileName == this.fileName &&
+          other.mimeType == this.mimeType &&
+          other.createdAt == this.createdAt);
+}
+
+class ReceiptAssetsCompanion extends UpdateCompanion<ReceiptAsset> {
+  final Value<int> id;
+  final Value<String> relativePath;
+  final Value<String> fileName;
+  final Value<String> mimeType;
+  final Value<DateTime> createdAt;
+  const ReceiptAssetsCompanion({
+    this.id = const Value.absent(),
+    this.relativePath = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.mimeType = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  ReceiptAssetsCompanion.insert({
+    this.id = const Value.absent(),
+    required String relativePath,
+    required String fileName,
+    required String mimeType,
+    required DateTime createdAt,
+  }) : relativePath = Value(relativePath),
+       fileName = Value(fileName),
+       mimeType = Value(mimeType),
+       createdAt = Value(createdAt);
+  static Insertable<ReceiptAsset> custom({
+    Expression<int>? id,
+    Expression<String>? relativePath,
+    Expression<String>? fileName,
+    Expression<String>? mimeType,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (relativePath != null) 'relative_path': relativePath,
+      if (fileName != null) 'file_name': fileName,
+      if (mimeType != null) 'mime_type': mimeType,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  ReceiptAssetsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? relativePath,
+    Value<String>? fileName,
+    Value<String>? mimeType,
+    Value<DateTime>? createdAt,
+  }) {
+    return ReceiptAssetsCompanion(
+      id: id ?? this.id,
+      relativePath: relativePath ?? this.relativePath,
+      fileName: fileName ?? this.fileName,
+      mimeType: mimeType ?? this.mimeType,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (relativePath.present) {
+      map['relative_path'] = Variable<String>(relativePath.value);
+    }
+    if (fileName.present) {
+      map['file_name'] = Variable<String>(fileName.value);
+    }
+    if (mimeType.present) {
+      map['mime_type'] = Variable<String>(mimeType.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReceiptAssetsCompanion(')
+          ..write('id: $id, ')
+          ..write('relativePath: $relativePath, ')
+          ..write('fileName: $fileName, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $MaintenanceRecordsTable extends MaintenanceRecords
     with TableInfo<$MaintenanceRecordsTable, MaintenanceRecord> {
   @override
@@ -1912,6 +2274,20 @@ class $MaintenanceRecordsTable extends MaintenanceRecords
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _receiptAssetIdMeta = const VerificationMeta(
+    'receiptAssetId',
+  );
+  @override
+  late final GeneratedColumn<int> receiptAssetId = GeneratedColumn<int>(
+    'receipt_asset_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES receipt_assets (id) ON DELETE SET NULL',
+    ),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1944,6 +2320,7 @@ class $MaintenanceRecordsTable extends MaintenanceRecords
     cost,
     shopName,
     memo,
+    receiptAssetId,
     createdAt,
     updatedAt,
   ];
@@ -2018,6 +2395,15 @@ class $MaintenanceRecordsTable extends MaintenanceRecords
         memo.isAcceptableOrUnknown(data['memo']!, _memoMeta),
       );
     }
+    if (data.containsKey('receipt_asset_id')) {
+      context.handle(
+        _receiptAssetIdMeta,
+        receiptAssetId.isAcceptableOrUnknown(
+          data['receipt_asset_id']!,
+          _receiptAssetIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -2075,6 +2461,10 @@ class $MaintenanceRecordsTable extends MaintenanceRecords
         DriftSqlType.string,
         data['${effectivePrefix}memo'],
       ),
+      receiptAssetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}receipt_asset_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -2106,6 +2496,10 @@ class MaintenanceRecord extends DataClass
   final int? cost;
   final String? shopName;
   final String? memo;
+
+  /// The attached receipt, if any. Setting it null leaves the file orphaned,
+  /// so go through `MaintenanceRepository` rather than writing this directly.
+  final int? receiptAssetId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const MaintenanceRecord({
@@ -2117,6 +2511,7 @@ class MaintenanceRecord extends DataClass
     this.cost,
     this.shopName,
     this.memo,
+    this.receiptAssetId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -2137,6 +2532,9 @@ class MaintenanceRecord extends DataClass
     if (!nullToAbsent || memo != null) {
       map['memo'] = Variable<String>(memo);
     }
+    if (!nullToAbsent || receiptAssetId != null) {
+      map['receipt_asset_id'] = Variable<int>(receiptAssetId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -2154,6 +2552,9 @@ class MaintenanceRecord extends DataClass
           ? const Value.absent()
           : Value(shopName),
       memo: memo == null && nullToAbsent ? const Value.absent() : Value(memo),
+      receiptAssetId: receiptAssetId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(receiptAssetId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -2173,6 +2574,7 @@ class MaintenanceRecord extends DataClass
       cost: serializer.fromJson<int?>(json['cost']),
       shopName: serializer.fromJson<String?>(json['shopName']),
       memo: serializer.fromJson<String?>(json['memo']),
+      receiptAssetId: serializer.fromJson<int?>(json['receiptAssetId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -2189,6 +2591,7 @@ class MaintenanceRecord extends DataClass
       'cost': serializer.toJson<int?>(cost),
       'shopName': serializer.toJson<String?>(shopName),
       'memo': serializer.toJson<String?>(memo),
+      'receiptAssetId': serializer.toJson<int?>(receiptAssetId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -2203,6 +2606,7 @@ class MaintenanceRecord extends DataClass
     Value<int?> cost = const Value.absent(),
     Value<String?> shopName = const Value.absent(),
     Value<String?> memo = const Value.absent(),
+    Value<int?> receiptAssetId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => MaintenanceRecord(
@@ -2214,6 +2618,9 @@ class MaintenanceRecord extends DataClass
     cost: cost.present ? cost.value : this.cost,
     shopName: shopName.present ? shopName.value : this.shopName,
     memo: memo.present ? memo.value : this.memo,
+    receiptAssetId: receiptAssetId.present
+        ? receiptAssetId.value
+        : this.receiptAssetId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -2231,6 +2638,9 @@ class MaintenanceRecord extends DataClass
       cost: data.cost.present ? data.cost.value : this.cost,
       shopName: data.shopName.present ? data.shopName.value : this.shopName,
       memo: data.memo.present ? data.memo.value : this.memo,
+      receiptAssetId: data.receiptAssetId.present
+          ? data.receiptAssetId.value
+          : this.receiptAssetId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -2247,6 +2657,7 @@ class MaintenanceRecord extends DataClass
           ..write('cost: $cost, ')
           ..write('shopName: $shopName, ')
           ..write('memo: $memo, ')
+          ..write('receiptAssetId: $receiptAssetId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -2263,6 +2674,7 @@ class MaintenanceRecord extends DataClass
     cost,
     shopName,
     memo,
+    receiptAssetId,
     createdAt,
     updatedAt,
   );
@@ -2278,6 +2690,7 @@ class MaintenanceRecord extends DataClass
           other.cost == this.cost &&
           other.shopName == this.shopName &&
           other.memo == this.memo &&
+          other.receiptAssetId == this.receiptAssetId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -2291,6 +2704,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
   final Value<int?> cost;
   final Value<String?> shopName;
   final Value<String?> memo;
+  final Value<int?> receiptAssetId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const MaintenanceRecordsCompanion({
@@ -2302,6 +2716,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
     this.cost = const Value.absent(),
     this.shopName = const Value.absent(),
     this.memo = const Value.absent(),
+    this.receiptAssetId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -2314,6 +2729,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
     this.cost = const Value.absent(),
     this.shopName = const Value.absent(),
     this.memo = const Value.absent(),
+    this.receiptAssetId = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : vehicleId = Value(vehicleId),
@@ -2331,6 +2747,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
     Expression<int>? cost,
     Expression<String>? shopName,
     Expression<String>? memo,
+    Expression<int>? receiptAssetId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -2343,6 +2760,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
       if (cost != null) 'cost': cost,
       if (shopName != null) 'shop_name': shopName,
       if (memo != null) 'memo': memo,
+      if (receiptAssetId != null) 'receipt_asset_id': receiptAssetId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -2357,6 +2775,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
     Value<int?>? cost,
     Value<String?>? shopName,
     Value<String?>? memo,
+    Value<int?>? receiptAssetId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -2369,6 +2788,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
       cost: cost ?? this.cost,
       shopName: shopName ?? this.shopName,
       memo: memo ?? this.memo,
+      receiptAssetId: receiptAssetId ?? this.receiptAssetId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -2401,6 +2821,9 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
     if (memo.present) {
       map['memo'] = Variable<String>(memo.value);
     }
+    if (receiptAssetId.present) {
+      map['receipt_asset_id'] = Variable<int>(receiptAssetId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -2421,6 +2844,7 @@ class MaintenanceRecordsCompanion extends UpdateCompanion<MaintenanceRecord> {
           ..write('cost: $cost, ')
           ..write('shopName: $shopName, ')
           ..write('memo: $memo, ')
+          ..write('receiptAssetId: $receiptAssetId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -2438,6 +2862,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $VehicleMaintenanceSettingsTable vehicleMaintenanceSettings =
       $VehicleMaintenanceSettingsTable(this);
+  late final $ReceiptAssetsTable receiptAssets = $ReceiptAssetsTable(this);
   late final $MaintenanceRecordsTable maintenanceRecords =
       $MaintenanceRecordsTable(this);
   @override
@@ -2449,6 +2874,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     vehicles,
     maintenanceTypes,
     vehicleMaintenanceSettings,
+    receiptAssets,
     maintenanceRecords,
   ];
   @override
@@ -2477,6 +2903,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('maintenance_records', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'receipt_assets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('maintenance_records', kind: UpdateKind.update)],
     ),
   ]);
 }
@@ -4080,6 +4513,315 @@ typedef $$VehicleMaintenanceSettingsTableProcessedTableManager =
       VehicleMaintenanceSetting,
       PrefetchHooks Function({bool vehicleId, bool maintenanceTypeId})
     >;
+typedef $$ReceiptAssetsTableCreateCompanionBuilder =
+    ReceiptAssetsCompanion Function({
+      Value<int> id,
+      required String relativePath,
+      required String fileName,
+      required String mimeType,
+      required DateTime createdAt,
+    });
+typedef $$ReceiptAssetsTableUpdateCompanionBuilder =
+    ReceiptAssetsCompanion Function({
+      Value<int> id,
+      Value<String> relativePath,
+      Value<String> fileName,
+      Value<String> mimeType,
+      Value<DateTime> createdAt,
+    });
+
+final class $$ReceiptAssetsTableReferences
+    extends BaseReferences<_$AppDatabase, $ReceiptAssetsTable, ReceiptAsset> {
+  $$ReceiptAssetsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$MaintenanceRecordsTable, List<MaintenanceRecord>>
+  _maintenanceRecordsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.maintenanceRecords,
+        aliasName: 'receipt_assets__id__maintenance_records__receipt_asset_id',
+      );
+
+  $$MaintenanceRecordsTableProcessedTableManager get maintenanceRecordsRefs {
+    final manager = $$MaintenanceRecordsTableTableManager(
+      $_db,
+      $_db.maintenanceRecords,
+    ).filter((f) => f.receiptAssetId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _maintenanceRecordsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ReceiptAssetsTableFilterComposer
+    extends Composer<_$AppDatabase, $ReceiptAssetsTable> {
+  $$ReceiptAssetsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> maintenanceRecordsRefs(
+    Expression<bool> Function($$MaintenanceRecordsTableFilterComposer f) f,
+  ) {
+    final $$MaintenanceRecordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.maintenanceRecords,
+      getReferencedColumn: (t) => t.receiptAssetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MaintenanceRecordsTableFilterComposer(
+            $db: $db,
+            $table: $db.maintenanceRecords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ReceiptAssetsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ReceiptAssetsTable> {
+  $$ReceiptAssetsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ReceiptAssetsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ReceiptAssetsTable> {
+  $$ReceiptAssetsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get relativePath => $composableBuilder(
+    column: $table.relativePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => column);
+
+  GeneratedColumn<String> get mimeType =>
+      $composableBuilder(column: $table.mimeType, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> maintenanceRecordsRefs<T extends Object>(
+    Expression<T> Function($$MaintenanceRecordsTableAnnotationComposer a) f,
+  ) {
+    final $$MaintenanceRecordsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.maintenanceRecords,
+          getReferencedColumn: (t) => t.receiptAssetId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MaintenanceRecordsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.maintenanceRecords,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ReceiptAssetsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ReceiptAssetsTable,
+          ReceiptAsset,
+          $$ReceiptAssetsTableFilterComposer,
+          $$ReceiptAssetsTableOrderingComposer,
+          $$ReceiptAssetsTableAnnotationComposer,
+          $$ReceiptAssetsTableCreateCompanionBuilder,
+          $$ReceiptAssetsTableUpdateCompanionBuilder,
+          (ReceiptAsset, $$ReceiptAssetsTableReferences),
+          ReceiptAsset,
+          PrefetchHooks Function({bool maintenanceRecordsRefs})
+        > {
+  $$ReceiptAssetsTableTableManager(_$AppDatabase db, $ReceiptAssetsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReceiptAssetsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReceiptAssetsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ReceiptAssetsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> relativePath = const Value.absent(),
+                Value<String> fileName = const Value.absent(),
+                Value<String> mimeType = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ReceiptAssetsCompanion(
+                id: id,
+                relativePath: relativePath,
+                fileName: fileName,
+                mimeType: mimeType,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String relativePath,
+                required String fileName,
+                required String mimeType,
+                required DateTime createdAt,
+              }) => ReceiptAssetsCompanion.insert(
+                id: id,
+                relativePath: relativePath,
+                fileName: fileName,
+                mimeType: mimeType,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ReceiptAssetsTable, ReceiptAsset>(table),
+                  $$ReceiptAssetsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({maintenanceRecordsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (maintenanceRecordsRefs) db.maintenanceRecords,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (maintenanceRecordsRefs)
+                    await $_getPrefetchedData<
+                      ReceiptAsset,
+                      $ReceiptAssetsTable,
+                      MaintenanceRecord
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ReceiptAssetsTableReferences
+                          ._maintenanceRecordsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ReceiptAssetsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).maintenanceRecordsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.receiptAssetId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ReceiptAssetsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ReceiptAssetsTable,
+      ReceiptAsset,
+      $$ReceiptAssetsTableFilterComposer,
+      $$ReceiptAssetsTableOrderingComposer,
+      $$ReceiptAssetsTableAnnotationComposer,
+      $$ReceiptAssetsTableCreateCompanionBuilder,
+      $$ReceiptAssetsTableUpdateCompanionBuilder,
+      (ReceiptAsset, $$ReceiptAssetsTableReferences),
+      ReceiptAsset,
+      PrefetchHooks Function({bool maintenanceRecordsRefs})
+    >;
 typedef $$MaintenanceRecordsTableCreateCompanionBuilder =
     MaintenanceRecordsCompanion Function({
       Value<int> id,
@@ -4090,6 +4832,7 @@ typedef $$MaintenanceRecordsTableCreateCompanionBuilder =
       Value<int?> cost,
       Value<String?> shopName,
       Value<String?> memo,
+      Value<int?> receiptAssetId,
       required DateTime createdAt,
       required DateTime updatedAt,
     });
@@ -4103,6 +4846,7 @@ typedef $$MaintenanceRecordsTableUpdateCompanionBuilder =
       Value<int?> cost,
       Value<String?> shopName,
       Value<String?> memo,
+      Value<int?> receiptAssetId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -4150,6 +4894,24 @@ final class $$MaintenanceRecordsTableReferences
       $_db.maintenanceTypes,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_maintenanceTypeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ReceiptAssetsTable _receiptAssetIdTable(_$AppDatabase db) => db
+      .receiptAssets
+      .createAlias('maintenance_records__receipt_asset_id__receipt_assets__id');
+
+  $$ReceiptAssetsTableProcessedTableManager? get receiptAssetId {
+    final $_column = $_itemColumn<int>('receipt_asset_id');
+    if ($_column == null) return null;
+    final manager = $$ReceiptAssetsTableTableManager(
+      $_db,
+      $_db.receiptAssets,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_receiptAssetIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -4243,6 +5005,29 @@ class $$MaintenanceRecordsTableFilterComposer
           }) => $$MaintenanceTypesTableFilterComposer(
             $db: $db,
             $table: $db.maintenanceTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ReceiptAssetsTableFilterComposer get receiptAssetId {
+    final $$ReceiptAssetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.receiptAssetId,
+      referencedTable: $db.receiptAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReceiptAssetsTableFilterComposer(
+            $db: $db,
+            $table: $db.receiptAssets,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4347,6 +5132,29 @@ class $$MaintenanceRecordsTableOrderingComposer
     );
     return composer;
   }
+
+  $$ReceiptAssetsTableOrderingComposer get receiptAssetId {
+    final $$ReceiptAssetsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.receiptAssetId,
+      referencedTable: $db.receiptAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReceiptAssetsTableOrderingComposer(
+            $db: $db,
+            $table: $db.receiptAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$MaintenanceRecordsTableAnnotationComposer
@@ -4429,6 +5237,29 @@ class $$MaintenanceRecordsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$ReceiptAssetsTableAnnotationComposer get receiptAssetId {
+    final $$ReceiptAssetsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.receiptAssetId,
+      referencedTable: $db.receiptAssets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReceiptAssetsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.receiptAssets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$MaintenanceRecordsTableTableManager
@@ -4444,7 +5275,11 @@ class $$MaintenanceRecordsTableTableManager
           $$MaintenanceRecordsTableUpdateCompanionBuilder,
           (MaintenanceRecord, $$MaintenanceRecordsTableReferences),
           MaintenanceRecord,
-          PrefetchHooks Function({bool vehicleId, bool maintenanceTypeId})
+          PrefetchHooks Function({
+            bool vehicleId,
+            bool maintenanceTypeId,
+            bool receiptAssetId,
+          })
         > {
   $$MaintenanceRecordsTableTableManager(
     _$AppDatabase db,
@@ -4472,6 +5307,7 @@ class $$MaintenanceRecordsTableTableManager
                 Value<int?> cost = const Value.absent(),
                 Value<String?> shopName = const Value.absent(),
                 Value<String?> memo = const Value.absent(),
+                Value<int?> receiptAssetId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => MaintenanceRecordsCompanion(
@@ -4483,6 +5319,7 @@ class $$MaintenanceRecordsTableTableManager
                 cost: cost,
                 shopName: shopName,
                 memo: memo,
+                receiptAssetId: receiptAssetId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -4496,6 +5333,7 @@ class $$MaintenanceRecordsTableTableManager
                 Value<int?> cost = const Value.absent(),
                 Value<String?> shopName = const Value.absent(),
                 Value<String?> memo = const Value.absent(),
+                Value<int?> receiptAssetId = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
               }) => MaintenanceRecordsCompanion.insert(
@@ -4507,6 +5345,7 @@ class $$MaintenanceRecordsTableTableManager
                 cost: cost,
                 shopName: shopName,
                 memo: memo,
+                receiptAssetId: receiptAssetId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -4521,7 +5360,11 @@ class $$MaintenanceRecordsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({vehicleId = false, maintenanceTypeId = false}) {
+              ({
+                vehicleId = false,
+                maintenanceTypeId = false,
+                receiptAssetId = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [],
@@ -4565,6 +5408,18 @@ class $$MaintenanceRecordsTableTableManager
                                     .id,
                           ) as T;
                         }
+                        if (receiptAssetId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.receiptAssetId,
+                            referencedTable: $$MaintenanceRecordsTableReferences
+                                ._receiptAssetIdTable(db),
+                            referencedColumn:
+                                $$MaintenanceRecordsTableReferences
+                                    ._receiptAssetIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
 
                         return state;
                       },
@@ -4589,7 +5444,11 @@ typedef $$MaintenanceRecordsTableProcessedTableManager =
       $$MaintenanceRecordsTableUpdateCompanionBuilder,
       (MaintenanceRecord, $$MaintenanceRecordsTableReferences),
       MaintenanceRecord,
-      PrefetchHooks Function({bool vehicleId, bool maintenanceTypeId})
+      PrefetchHooks Function({
+        bool vehicleId,
+        bool maintenanceTypeId,
+        bool receiptAssetId,
+      })
     >;
 
 class $AppDatabaseManager {
@@ -4607,6 +5466,8 @@ class $AppDatabaseManager {
         _db,
         _db.vehicleMaintenanceSettings,
       );
+  $$ReceiptAssetsTableTableManager get receiptAssets =>
+      $$ReceiptAssetsTableTableManager(_db, _db.receiptAssets);
   $$MaintenanceRecordsTableTableManager get maintenanceRecords =>
       $$MaintenanceRecordsTableTableManager(_db, _db.maintenanceRecords);
 }

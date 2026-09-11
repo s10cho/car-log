@@ -3,12 +3,15 @@ import 'package:car_log/app/config/app_config.dart';
 import 'package:car_log/core/database/app_database.dart';
 import 'package:car_log/core/database/database_providers.dart';
 import 'package:car_log/features/notification/data/notification_scheduler_port.dart';
+import 'package:car_log/features/receipt/data/receipt_picker.dart';
+import 'package:car_log/features/receipt/data/receipt_storage.dart';
 import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fake_notification_scheduler.dart';
+import 'fake_receipt_picker.dart';
 import 'test_database.dart';
 
 /// Boots the real app against an in-memory database.
@@ -17,6 +20,7 @@ import 'test_database.dart';
 /// state or assert what was written.
 ({Widget app, ProviderContainer container}) buildTestApp() {
   final database = openTestDatabase();
+  final picker = FakeReceiptPicker();
   final notifications = FakeNotificationScheduler();
   addTearDown(notifications.dispose);
   final container = ProviderContainer(
@@ -26,6 +30,11 @@ import 'test_database.dart';
       // No notification plugin in a widget test; the rules are covered by
       // planReminders' own tests.
       notificationSchedulerProvider.overrideWithValue(notifications),
+      // No camera or file system dialog in a widget test.
+      receiptPickerProvider.overrideWithValue(picker),
+      receiptStorageProvider.overrideWithValue(
+        openTestReceiptStorage(database),
+      ),
     ],
   );
   addTearDown(container.dispose);
@@ -68,3 +77,20 @@ Future<List<MaintenanceType>> readMaintenanceTypes(
 /// asked the platform to schedule.
 FakeNotificationScheduler notificationsOf(ProviderContainer container) =>
     container.read(notificationSchedulerProvider) as FakeNotificationScheduler;
+
+/// The stand-in picker behind [buildTestApp].
+FakeReceiptPicker pickerOf(ProviderContainer container) =>
+    container.read(receiptPickerProvider) as FakeReceiptPicker;
+
+/// Taps [finder] and lets real file I/O finish.
+///
+/// A widget test holds a fake clock, so `dart:io` work started by a tap — such
+/// as copying a receipt into the app's storage — never completes unless the
+/// real event loop is allowed to run.
+Future<void> tapAndAwaitIo(WidgetTester tester, Finder finder) async {
+  await tester.runAsync(() async {
+    await tester.tap(finder);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+  });
+  await settle(tester);
+}

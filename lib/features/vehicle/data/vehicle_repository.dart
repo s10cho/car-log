@@ -4,15 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/database/database_providers.dart';
 import '../../../core/errors/app_exception.dart';
+import '../../receipt/data/receipt_storage.dart';
 
 /// Preference key holding the id of the vehicle the user is looking at.
 const String selectedVehicleKey = 'selected_vehicle_id';
 
 /// Reads and writes vehicles.
 class VehicleRepository {
-  const VehicleRepository(this._database);
+  const VehicleRepository(this._database, this._receipts);
 
   final AppDatabase _database;
+  final ReceiptStorage _receipts;
 
   /// All vehicles, oldest first — the order they were added.
   Stream<List<Vehicle>> watchAll() {
@@ -151,11 +153,21 @@ class VehicleRepository {
 
   /// Deletes a vehicle along with its maintenance records and interval
   /// overrides, which the schema cascades.
+  ///
+  /// Receipt files are not cascaded by the database, so they are collected and
+  /// removed first — otherwise they sit in the documents directory forever,
+  /// counting against the user's storage and against any backup they take.
   Future<void> delete(int id) async {
     try {
+      final receipts = await _receiptPathsFor(id);
+
       await (_database.delete(
         _database.vehicles,
       )..where((v) => v.id.equals(id))).go();
+
+      for (final path in receipts) {
+        await _receipts.delete(path);
+      }
     } on Object catch (error, stackTrace) {
       throw LocalDatabaseException(
         'Failed to delete vehicle $id',
@@ -190,10 +202,31 @@ class VehicleRepository {
       );
     }
   }
+
+  /// Relative paths of every receipt attached to this vehicle's records.
+  Future<List<String>> _receiptPathsFor(int vehicleId) async {
+    final query = _database.select(_database.receiptAssets).join([
+      innerJoin(
+        _database.maintenanceRecords,
+        _database.maintenanceRecords.receiptAssetId.equalsExp(
+          _database.receiptAssets.id,
+        ),
+      ),
+    ])..where(_database.maintenanceRecords.vehicleId.equals(vehicleId));
+
+    final rows = await query.get();
+    return [
+      for (final row in rows)
+        row.readTable(_database.receiptAssets).relativePath,
+    ];
+  }
 }
 
 final vehicleRepositoryProvider = Provider<VehicleRepository>(
-  (ref) => VehicleRepository(ref.watch(appDatabaseProvider)),
+  (ref) => VehicleRepository(
+    ref.watch(appDatabaseProvider),
+    ref.watch(receiptStorageProvider),
+  ),
 );
 
 /// The vehicle the home screen is showing, or null before the first one exists.

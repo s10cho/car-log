@@ -19,8 +19,8 @@ void main() {
 
   setUp(() async {
     database = openTestDatabase();
-    vehicles = VehicleRepository(database);
-    maintenance = MaintenanceRepository(database);
+    vehicles = openTestVehicleRepository(database);
+    maintenance = openTestMaintenanceRepository(database);
     typeId = (await maintenance.engineOilType()).id;
 
     vehicleId = await vehicles.create(

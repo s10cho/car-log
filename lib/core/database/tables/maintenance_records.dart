@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import 'maintenance_types.dart';
+import 'receipt_assets.dart';
 import 'vehicles.dart';
 
 /// One completed piece of maintenance.
@@ -28,6 +29,14 @@ class MaintenanceRecords extends Table {
   IntColumn get cost => integer().nullable()();
   TextColumn get shopName => text().nullable()();
   TextColumn get memo => text().nullable()();
+
+  /// The attached receipt, if any. Setting it null leaves the file orphaned,
+  /// so go through `MaintenanceRepository` rather than writing this directly.
+  IntColumn get receiptAssetId => integer().nullable().references(
+    ReceiptAssets,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();

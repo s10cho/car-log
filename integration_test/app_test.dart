@@ -252,6 +252,27 @@ void main() {
     expect(find.widgetWithText(SwitchListTile, '이 항목 알림'), findsOneWidget);
   });
 
+  testWidgets('a record can be saved with a receipt attached', (tester) async {
+    final scope = container();
+    addTearDown(scope.dispose);
+
+    await tester.pumpWidget(app(scope));
+    await settle(tester);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await settle(tester);
+
+    // 실기기 카메라/앨범 창은 띄우지 않는다. 첨부 선택지가 모두 있는지만 본다.
+    await tester.tap(find.widgetWithText(OutlinedButton, '영수증 첨부'));
+    await settle(tester);
+    expect(find.text('촬영'), findsOneWidget);
+    expect(find.text('앨범에서 선택'), findsOneWidget);
+    expect(find.text('파일에서 선택'), findsOneWidget);
+
+    await tester.tapAt(const Offset(200, 100));
+    await settle(tester);
+  });
+
   testWidgets('reminders start switched off', (tester) async {
     final scope = container();
     addTearDown(scope.dispose);

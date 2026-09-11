@@ -15,8 +15,8 @@ void main() {
 
   setUp(() async {
     database = openTestDatabase();
-    repository = MaintenanceRepository(database);
-    vehicles = VehicleRepository(database);
+    repository = openTestMaintenanceRepository(database);
+    vehicles = openTestVehicleRepository(database);
     vehicleId = await vehicles.create(
       displayName: '아반떼',
       currentMileage: 40000,

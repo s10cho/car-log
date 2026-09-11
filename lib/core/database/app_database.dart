@@ -5,6 +5,7 @@ import 'built_in_maintenance_types.dart';
 import 'tables/app_preferences.dart';
 import 'tables/maintenance_records.dart';
 import 'tables/maintenance_types.dart';
+import 'tables/receipt_assets.dart';
 import 'tables/vehicle_maintenance_settings.dart';
 import 'tables/vehicles.dart';
 
@@ -23,6 +24,7 @@ part 'app_database.g.dart';
     MaintenanceTypes,
     VehicleMaintenanceSettings,
     MaintenanceRecords,
+    ReceiptAssets,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -32,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.file(String name) : super(driftDatabase(name: name));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -55,6 +57,13 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(
           vehicleMaintenanceSettings,
           vehicleMaintenanceSettings.notificationEnabled,
+        );
+      }
+      if (from < 5) {
+        await m.createTable(receiptAssets);
+        await m.addColumn(
+          maintenanceRecords,
+          maintenanceRecords.receiptAssetId,
         );
       }
     },

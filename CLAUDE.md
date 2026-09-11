@@ -95,6 +95,10 @@ Future를 돌려주는 읽기(`findById` 등)는 괜찮다. 위젯 테스트는 
 `CircularProgressIndicator` 가 떠 있으면 애니메이션이 끝나지 않아 반환되지 않는다.
 `test/support/test_app.dart` 의 `settle(tester)` 로 정해진 프레임 수만 진행시킨다.
 
+**실제 파일 I/O 가 끼는 탭은 `tapAndAwaitIo` 로 한다.** 위젯 테스트는 가짜 시계를 쥐고
+있어서, 탭이 시작한 `dart:io` 작업(영수증 파일 복사 등)이 그냥 `pump` 만으로는 끝나지
+않는다. `tester.runAsync` 로 실제 이벤트 루프를 돌려야 한다.
+
 **앱은 `buildTestApp()` 으로 띄운다.** 인메모리 DB와 DEV 설정을 주입해 준다. 오버라이드
 없이 띄우면 실제 기기 DB를 열려고 하다가 실패한다.
 

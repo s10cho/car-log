@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/app_formats.dart';
+import '../../receipt/data/receipt_picker.dart';
+import '../../receipt/domain/picked_receipt.dart';
+import '../../receipt/presentation/receipt_picker_sheet.dart';
 import '../../vehicle/data/vehicle_repository.dart';
 import '../data/maintenance_repository.dart';
 
@@ -31,6 +34,7 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
 
   /// Null until the user picks one; the build falls back to 엔진오일.
   int? _typeId;
+  PickedReceipt? _receipt;
   bool _saving = false;
 
   @override
@@ -72,6 +76,7 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
             cost: int.tryParse(_cost.text.trim()),
             shopName: _nullIfBlank(_shopName.text),
             memo: _nullIfBlank(_memo.text),
+            receipt: _receipt,
           );
       if (mounted) {
         Navigator.of(context).pop();
@@ -82,6 +87,25 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('기록을 저장하지 못했습니다. 다시 시도해 주세요.')),
         );
+      }
+    }
+  }
+
+  Future<void> _pickReceipt() async {
+    final source = await showReceiptSourceSheet(context);
+    if (source == null || !mounted) {
+      return;
+    }
+
+    try {
+      final picked = await ref.read(receiptPickerProvider).pick(source);
+      if (picked != null && mounted) {
+        setState(() => _receipt = picked);
+      }
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('영수증을 불러오지 못했습니다.')));
       }
     }
   }
@@ -153,6 +177,12 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
                 border: const OutlineInputBorder(),
               ),
               validator: _validateMileage,
+            ),
+            const SizedBox(height: 16),
+            _ReceiptField(
+              receipt: _receipt,
+              onPick: _pickReceipt,
+              onClear: () => setState(() => _receipt = null),
             ),
             const SizedBox(height: 24),
             Text(
@@ -229,4 +259,61 @@ String? _validateMileage(String? value) {
     return '주행거리를 다시 확인해 주세요';
   }
   return null;
+}
+
+/// The receipt slot on the record form: empty, or showing what will be saved.
+class _ReceiptField extends StatelessWidget {
+  const _ReceiptField({
+    required this.receipt,
+    required this.onPick,
+    required this.onClear,
+  });
+
+  final PickedReceipt? receipt;
+  final VoidCallback onPick;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final attached = receipt;
+
+    if (attached == null) {
+      return OutlinedButton.icon(
+        onPressed: onPick,
+        icon: const Icon(Icons.receipt_long_outlined),
+        label: const Text('영수증 첨부'),
+        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+      );
+    }
+
+    return Card(
+      child: ListTile(
+        leading: attached.isImage
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.file(
+                  attached.file,
+                  width: 44,
+                  height: 44,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, _, _) =>
+                      const Icon(Icons.broken_image_outlined),
+                ),
+              )
+            : const Icon(Icons.description_outlined),
+        title: Text(
+          attached.fileName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text('저장 시 함께 보관됩니다', style: theme.textTheme.bodySmall),
+        trailing: IconButton(
+          icon: const Icon(Icons.close),
+          tooltip: '첨부 취소',
+          onPressed: onClear,
+        ),
+      ),
+    );
+  }
 }

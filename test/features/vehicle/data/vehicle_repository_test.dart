@@ -10,7 +10,7 @@ void main() {
 
   setUp(() {
     database = openTestDatabase();
-    repository = VehicleRepository(database);
+    repository = openTestVehicleRepository(database);
   });
 
   test('creates a vehicle with the required fields', () async {
