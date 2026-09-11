@@ -12,6 +12,7 @@ import '../../maintenance/domain/maintenance_schedule.dart';
 import '../../maintenance/domain/maintenance_status.dart';
 import '../../maintenance/presentation/maintenance_record_tile.dart';
 import '../../vehicle/data/vehicle_repository.dart';
+import '../../vehicle/domain/mileage_freshness.dart';
 
 /// The screen the app opens on: what needs doing, and how to record what was
 /// just done. It renders entirely from local data, so it never waits on a
@@ -247,6 +248,20 @@ class _MileageCard extends ConsumerWidget {
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
+                  if (isMileageStale(
+                    updatedAt: vehicle.mileageUpdatedAt,
+                    now: DateTime.now(),
+                  )) ...[
+                    const SizedBox(height: 8),
+                    // A stale odometer makes every distance-based due point
+                    // quietly wrong, and nothing on screen would show it.
+                    Text(
+                      '주행거리를 업데이트하면 다음 교체 시기를 더 정확히 알려 드립니다.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.tertiary,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

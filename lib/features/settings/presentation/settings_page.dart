@@ -22,6 +22,13 @@ class SettingsPage extends ConsumerWidget {
             onTap: () => context.pushNamed(AppRoutes.reminderSettingsName),
           ),
           ListTile(
+            leading: const Icon(Icons.directions_car_outlined),
+            title: const Text('차량 연동'),
+            subtitle: const Text('연동되지 않음 · 주행거리 직접 입력'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.pushNamed(AppRoutes.vehicleIntegrationName),
+          ),
+          ListTile(
             leading: const Icon(Icons.auto_awesome_outlined),
             title: const Text('AI 영수증 분석'),
             trailing: const Icon(Icons.chevron_right),
