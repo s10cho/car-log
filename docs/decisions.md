@@ -51,14 +51,44 @@ Drift에도, 일반 preferences에도, export 백업에도 들어가지 않는�
 `flutter create` 기본값은 iOS `com.s10cho.carLog`, Android `com.s10cho.car_log` 로 서로
 달랐다. iOS 번들 ID에는 밑줄을 쓸 수 없으므로 양쪽을 소문자 한 단어로 통일했다.
 
+### 기본 정비 항목의 주기는 일반 권장값이다
+
+`lib/core/database/built_in_maintenance_types.dart` 에 10개 항목을 심는다. 이 중 스펙이
+수치를 명시한 것은 엔진오일(10,000 km 또는 12개월)과 와이퍼(12개월) 둘뿐이고, 나머지
+8개는 국내 승용차에서 통용되는 범위를 골랐다. 제조사 수치가 아니다.
+
+지어낸 값을 진실처럼 보이게 두지 않기 위해 두 가지를 한다. 항목 관리 화면에 "일반적인
+권장값"이라고 적고, 앱 전체 기본값과 차량별 override를 모두 수정 가능하게 둔다.
+
+시드는 `code` 로 중복을 판단하는 `insertOrIgnore` 라서, 사용자가 고친 이름이나 주기를
+앱 업데이트가 되돌리지 않는다.
+
+### 홈은 기록이 있는 항목만 보여준다
+
+기본 항목 10개를 전부 나열하면 새 차량의 홈이 "기록 없음" 아홉 줄에 묻힌다. 홈은 이
+차량에서 실제로 기록한 항목만 급한 순(지남 → 임박 → 여유)으로 보여주고, 전체 목록은
+항목 관리 화면에서 본다.
+
+### 기본 항목은 삭제할 수 없다
+
+이름과 주기는 고칠 수 있지만 삭제는 사용자 정의 항목만 가능하다. 정비 기록이 항목을
+참조하므로 삭제는 이력을 함께 날리거나 실패한다. 참조가 있는 사용자 정의 항목도
+삭제를 막고 기록이 몇 건인지 알려 준다.
+
 ### Android 검증은 Firebase App Distribution
 
 개발 머신에서 Android 에뮬레이터를 돌리지 않는다. 로컬 런타임 검증은 iOS Simulator에서
 하고, Android는 빌드가 통과하는지까지만 로컬/CI에서 확인한 뒤 Firebase App Distribution
 으로 배포해 실기기에서 확인한다.
 
-> Firebase 프로젝트와 서비스 계정은 아직 만들지 않았다. Android 배포를 실제로 돌리려면
-> Firebase 프로젝트 ID와 App Distribution 용 서비스 계정 키가 필요하다.
+Firebase 프로젝트 `sycho-app-507317` 과 서비스 계정
+`play-publisher@sycho-app-507317.iam.gserviceaccount.com` 을 다른 프로젝트와 공유한다.
+서비스 계정 키는 **저장소에 복사하지 않고** 계정 공통 경로
+`~/.keys/sycho-mobile/play-service-account.json` 을 `GOOGLE_APPLICATION_CREDENTIALS` 로
+가리킨다. 사본을 만들면 키를 교체할 때 프로젝트를 전부 고쳐야 하고, 하나를 빠뜨리면
+그 앱만 조용히 실패한다. CI 에서는 같은 키를 GitHub Secret 으로 넣는다.
+
+> 남은 작업: Firebase 콘솔에서 `com.s10cho.carlog` 앱을 등록하고 App ID 를 받는 것.
 
 ### 비밀 파일은 git-crypt (대칭키)
 

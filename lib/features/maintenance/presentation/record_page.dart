@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../dashboard/presentation/home_page.dart' show MaintenanceRecordTile;
 import '../../vehicle/data/vehicle_repository.dart';
 import '../data/maintenance_repository.dart';
+import '../domain/maintenance_status.dart';
 
 /// The full maintenance history for the current vehicle.
 class RecordPage extends ConsumerWidget {
@@ -13,7 +14,12 @@ class RecordPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final recordsAsync = ref.watch(maintenanceRecordsProvider);
-    final typeName = ref.watch(engineOilStatusProvider).value?.typeName;
+    final typeNames = {
+      for (final status
+          in ref.watch(maintenanceStatusesProvider).value ??
+              const <MaintenanceStatus>[])
+        status.typeId: status.typeName,
+    };
 
     return Scaffold(
       appBar: AppBar(
@@ -54,8 +60,10 @@ class RecordPage extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           itemCount: records!.length,
           separatorBuilder: (_, _) => const Divider(height: 1),
-          itemBuilder: (context, index) =>
-              MaintenanceRecordTile(record: records[index], typeName: typeName),
+          itemBuilder: (context, index) => MaintenanceRecordTile(
+            record: records[index],
+            typeName: typeNames[records[index].maintenanceTypeId],
+          ),
         ),
         _ => const Center(child: CircularProgressIndicator()),
       },

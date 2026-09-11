@@ -145,14 +145,15 @@ class MaintenanceRepository {
     });
   }
 
-  /// The full picture for one maintenance type on one vehicle.
+  /// Every maintenance type with this vehicle's standing for it.
   ///
-  /// One query rather than three combined streams: the odometer, the last
-  /// record and the interval all feed the same answer, and Drift re-runs this
-  /// whenever any of the four tables change.
-  Stream<MaintenanceStatus?> watchStatus({
+  /// One query rather than a stream per type: the odometer, the last record and
+  /// the interval all feed the same answer, and Drift re-runs this whenever any
+  /// of the four tables change. Types the user has never recorded come back too,
+  /// with [MaintenanceStatus.hasRecord] false — the settings screen needs them
+  /// even though the home screen hides them.
+  Stream<List<MaintenanceStatus>> watchStatuses({
     required int vehicleId,
-    required String typeCode,
     DateTime Function() clock = DateTime.now,
   }) {
     return _database
@@ -162,14 +163,15 @@ class MaintenanceRepository {
             v.current_mileage             AS current_mileage,
             t.id                          AS type_id,
             t.name                        AS type_name,
+            t.is_built_in                 AS is_built_in,
             COALESCE(s.distance_interval, t.default_distance_interval)
                                           AS distance_interval,
             COALESCE(s.time_interval_months, t.default_time_interval_months)
                                           AS time_interval_months,
             r.maintenance_date            AS last_service_date,
             r.mileage                     AS last_service_mileage
-          FROM vehicles v
-          JOIN maintenance_types t ON t.code = ?2
+          FROM maintenance_types t
+          JOIN vehicles v ON v.id = ?1
           LEFT JOIN vehicle_maintenance_settings s
             ON s.vehicle_id = v.id AND s.maintenance_type_id = t.id
           LEFT JOIN maintenance_records r ON r.id = (
@@ -178,12 +180,9 @@ class MaintenanceRepository {
             ORDER BY r2.maintenance_date DESC, r2.id DESC
             LIMIT 1
           )
-          WHERE v.id = ?1
+          ORDER BY t.is_built_in DESC, t.id ASC
           ''',
-          variables: [
-            Variable.withInt(vehicleId),
-            Variable.withString(typeCode),
-          ],
+          variables: [Variable.withInt(vehicleId)],
           readsFrom: {
             _database.vehicles,
             _database.maintenanceTypes,
@@ -191,36 +190,125 @@ class MaintenanceRepository {
             _database.maintenanceRecords,
           },
         )
-        .watchSingleOrNull()
-        .map((row) {
-          if (row == null) {
-            return null;
-          }
+        .watch()
+        .map((rows) => rows.map((row) => _toStatus(row, clock)).toList());
+  }
 
-          final interval = MaintenanceInterval(
-            distanceKm: row.read<int?>('distance_interval'),
-            months: row.read<int?>('time_interval_months'),
-          );
-          final lastServiceDate = row.read<DateTime?>('last_service_date');
-          final lastServiceMileage = row.read<int?>('last_service_mileage');
+  MaintenanceStatus _toStatus(QueryRow row, DateTime Function() clock) {
+    final interval = MaintenanceInterval(
+      distanceKm: row.read<int?>('distance_interval'),
+      months: row.read<int?>('time_interval_months'),
+    );
+    final lastServiceDate = row.read<DateTime?>('last_service_date');
+    final lastServiceMileage = row.read<int?>('last_service_mileage');
 
-          return MaintenanceStatus(
-            typeId: row.read<int>('type_id'),
-            typeName: row.read<String>('type_name'),
-            interval: interval,
-            lastServiceDate: lastServiceDate,
-            lastServiceMileage: lastServiceMileage,
-            due: lastServiceDate == null || lastServiceMileage == null
-                ? null
-                : calculateMaintenanceDue(
-                    lastServiceDate: lastServiceDate,
-                    lastServiceMileage: lastServiceMileage,
-                    interval: interval,
-                    currentMileage: row.read<int>('current_mileage'),
-                    today: clock(),
-                  ),
+    return MaintenanceStatus(
+      typeId: row.read<int>('type_id'),
+      typeName: row.read<String>('type_name'),
+      isBuiltIn: row.read<bool>('is_built_in'),
+      interval: interval,
+      lastServiceDate: lastServiceDate,
+      lastServiceMileage: lastServiceMileage,
+      due: lastServiceDate == null || lastServiceMileage == null
+          ? null
+          : calculateMaintenanceDue(
+              lastServiceDate: lastServiceDate,
+              lastServiceMileage: lastServiceMileage,
+              interval: interval,
+              currentMileage: row.read<int>('current_mileage'),
+              today: clock(),
+            ),
+    );
+  }
+
+  /// All maintenance types, built-in first.
+  Stream<List<MaintenanceType>> watchTypes() {
+    return (_database.select(_database.maintenanceTypes)..orderBy([
+          (t) => OrderingTerm.desc(t.isBuiltIn),
+          (t) => OrderingTerm.asc(t.id),
+        ]))
+        .watch();
+  }
+
+  /// Adds a maintenance item the user defined. Returns its id.
+  Future<int> createCustomType({
+    required String name,
+    int? distanceInterval,
+    int? timeIntervalMonths,
+  }) async {
+    try {
+      return await _database
+          .into(_database.maintenanceTypes)
+          .insert(
+            MaintenanceTypesCompanion.insert(
+              name: name,
+              defaultDistanceInterval: Value(distanceInterval),
+              defaultTimeIntervalMonths: Value(timeIntervalMonths),
+            ),
           );
-        });
+    } on Object catch (error, stackTrace) {
+      throw LocalDatabaseException(
+        'Failed to create maintenance type "$name"',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// Renames a type and changes its recommended interval.
+  ///
+  /// Built-in types can be edited too — the shipped intervals are only
+  /// recommendations, and a user who knows their car should be able to correct
+  /// them once rather than per vehicle.
+  Future<void> updateType({
+    required int id,
+    required String name,
+    int? distanceInterval,
+    int? timeIntervalMonths,
+  }) async {
+    try {
+      await (_database.update(
+        _database.maintenanceTypes,
+      )..where((t) => t.id.equals(id))).write(
+        MaintenanceTypesCompanion(
+          name: Value(name),
+          defaultDistanceInterval: Value(distanceInterval),
+          defaultTimeIntervalMonths: Value(timeIntervalMonths),
+        ),
+      );
+    } on Object catch (error, stackTrace) {
+      throw LocalDatabaseException(
+        'Failed to update maintenance type $id',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  /// How many records of this type exist across all vehicles.
+  ///
+  /// The UI asks before offering to delete a type: records reference it, so
+  /// removing one that is in use would either fail or take history with it.
+  Future<int> recordCountForType(int typeId) async {
+    final rows = await (_database.select(
+      _database.maintenanceRecords,
+    )..where((r) => r.maintenanceTypeId.equals(typeId))).get();
+    return rows.length;
+  }
+
+  /// Deletes a user-defined type that nothing references.
+  Future<void> deleteType(int id) async {
+    try {
+      await (_database.delete(
+        _database.maintenanceTypes,
+      )..where((t) => t.id.equals(id) & t.isBuiltIn.equals(false))).go();
+    } on Object catch (error, stackTrace) {
+      throw LocalDatabaseException(
+        'Failed to delete maintenance type $id',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   /// Overrides the interval for one vehicle.
@@ -259,21 +347,37 @@ final engineOilTypeProvider = FutureProvider<MaintenanceType>(
   (ref) => ref.watch(maintenanceRepositoryProvider).engineOilType(),
 );
 
-/// 엔진오일 status for the vehicle the home screen is showing.
+/// Every maintenance type's standing for the vehicle being shown.
 ///
-/// Emits null when no vehicle exists yet — the first-use empty state.
-final engineOilStatusProvider = StreamProvider<MaintenanceStatus?>((
+/// Empty when no vehicle exists yet — the first-use empty state.
+final maintenanceStatusesProvider = StreamProvider<List<MaintenanceStatus>>((
   ref,
 ) async* {
   final vehicle = await ref.watch(currentVehicleProvider.future);
   if (vehicle == null) {
-    yield null;
+    yield const [];
     return;
   }
   yield* ref
       .watch(maintenanceRepositoryProvider)
-      .watchStatus(vehicleId: vehicle.id, typeCode: engineOilTypeCode);
+      .watchStatuses(vehicleId: vehicle.id);
 });
+
+/// The items the home screen lists: the ones the user actually tracks on this
+/// vehicle, most pressing first.
+///
+/// Showing all ten built-in items on a brand new car would bury the one thing
+/// that matters under nine rows of "기록 없음".
+final trackedMaintenanceProvider = Provider<List<MaintenanceStatus>>((ref) {
+  final statuses = ref.watch(maintenanceStatusesProvider).value ?? const [];
+  return statuses.where((status) => status.hasRecord).toList()
+    ..sort(compareByUrgency);
+});
+
+/// All maintenance types, for the settings screen.
+final maintenanceTypesProvider = StreamProvider<List<MaintenanceType>>(
+  (ref) => ref.watch(maintenanceRepositoryProvider).watchTypes(),
+);
 
 /// Every maintenance record for the current vehicle, most recent first.
 final maintenanceRecordsProvider = StreamProvider<List<MaintenanceRecord>>((

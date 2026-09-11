@@ -28,6 +28,9 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
   final _memo = TextEditingController();
 
   DateTime _date = DateTime.now();
+
+  /// Null until the user picks one; the build falls back to 엔진오일.
+  int? _typeId;
   bool _saving = false;
 
   @override
@@ -52,7 +55,7 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
     }
   }
 
-  Future<void> _save(Vehicle vehicle, MaintenanceType type) async {
+  Future<void> _save(Vehicle vehicle, int typeId) async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -63,7 +66,7 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
           .read(maintenanceRepositoryProvider)
           .addRecord(
             vehicleId: vehicle.id,
-            maintenanceTypeId: type.id,
+            maintenanceTypeId: typeId,
             maintenanceDate: _date,
             mileage: int.parse(_mileage.text.trim()),
             cost: int.tryParse(_cost.text.trim()),
@@ -91,19 +94,42 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
   @override
   Widget build(BuildContext context) {
     final vehicle = ref.watch(currentVehicleProvider).value;
-    final type = ref.watch(engineOilTypeProvider).value;
+    final types = ref.watch(maintenanceTypesProvider).value;
 
-    if (vehicle == null || type == null) {
+    if (vehicle == null || types == null || types.isEmpty) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    // 기본 선택은 엔진오일 — 가장 자주 기록하는 항목이다.
+    final selectedId =
+        _typeId ??
+        types
+            .firstWhere(
+              (type) => type.code == engineOilTypeCode,
+              orElse: () => types.first,
+            )
+            .id;
+
     return Scaffold(
-      appBar: AppBar(title: Text('${type.name} 기록')),
+      appBar: AppBar(title: const Text('정비 기록')),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
           children: [
+            DropdownButtonFormField<int>(
+              initialValue: selectedId,
+              decoration: const InputDecoration(
+                labelText: '정비 항목',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                for (final type in types)
+                  DropdownMenuItem(value: type.id, child: Text(type.name)),
+              ],
+              onChanged: (value) => setState(() => _typeId = value),
+            ),
+            const SizedBox(height: 16),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.event_outlined),
@@ -176,7 +202,7 @@ class _AddMaintenancePageState extends ConsumerState<AddMaintenancePage> {
           8 + MediaQuery.of(context).padding.bottom,
         ),
         child: FilledButton(
-          onPressed: _saving ? null : () => _save(vehicle, type),
+          onPressed: _saving ? null : () => _save(vehicle, selectedId),
           style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
           child: _saving
               ? const SizedBox.square(

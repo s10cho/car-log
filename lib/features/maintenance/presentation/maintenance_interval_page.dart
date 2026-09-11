@@ -11,9 +11,14 @@ import '../domain/maintenance_status.dart';
 /// Both dimensions are optional, but clearing both would leave nothing to
 /// calculate from, so at least one is required.
 class MaintenanceIntervalPage extends ConsumerStatefulWidget {
-  const MaintenanceIntervalPage({required this.vehicleId, super.key});
+  const MaintenanceIntervalPage({
+    required this.vehicleId,
+    required this.typeId,
+    super.key,
+  });
 
   final int vehicleId;
+  final int typeId;
 
   @override
   ConsumerState<MaintenanceIntervalPage> createState() =>
@@ -84,7 +89,11 @@ class _MaintenanceIntervalPageState
 
   @override
   Widget build(BuildContext context) {
-    final status = ref.watch(engineOilStatusProvider).value;
+    final status = ref
+        .watch(maintenanceStatusesProvider)
+        .value
+        ?.where((status) => status.typeId == widget.typeId)
+        .firstOrNull;
     if (status == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }

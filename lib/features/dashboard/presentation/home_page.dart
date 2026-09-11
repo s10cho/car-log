@@ -151,33 +151,66 @@ class _VehicleHome extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final status = ref.watch(engineOilStatusProvider).value;
+    final theme = Theme.of(context);
+    final tracked = ref.watch(trackedMaintenanceProvider);
     final records = ref.watch(maintenanceRecordsProvider).value ?? const [];
+    final statuses =
+        ref.watch(maintenanceStatusesProvider).value ??
+        const <MaintenanceStatus>[];
+    final typeNames = {
+      for (final status in statuses) status.typeId: status.typeName,
+    };
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
       children: [
         _MileageCard(vehicle: vehicle),
-        const SizedBox(height: 12),
-        if (status != null) ...[
-          _StatusCard(vehicle: vehicle, status: status),
-          const SizedBox(height: 24),
-        ],
-        Text('최근 기록', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(child: Text('정비 상태', style: theme.textTheme.titleMedium)),
+            TextButton(
+              onPressed: () =>
+                  context.pushNamed(AppRoutes.maintenanceTypesName),
+              child: const Text('항목 관리'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        if (tracked.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              '정비를 기록하면 다음 교체 시기를 여기에서 확인할 수 있습니다.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        else
+          for (final status in tracked) ...[
+            _StatusCard(vehicle: vehicle, status: status),
+            const SizedBox(height: 8),
+          ],
+        const SizedBox(height: 16),
+        Text('최근 기록', style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
         if (records.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Text(
               '아직 기록이 없습니다. 정비를 마쳤다면 아래 버튼으로 남겨 두세요.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           )
         else
           for (final record in records.take(3))
-            MaintenanceRecordTile(record: record, typeName: status?.typeName),
+            MaintenanceRecordTile(
+              record: record,
+              typeName: typeNames[record.maintenanceTypeId],
+            ),
       ],
     );
   }
@@ -293,7 +326,10 @@ class _StatusCard extends StatelessWidget {
               child: TextButton(
                 onPressed: () => context.pushNamed(
                   AppRoutes.maintenanceIntervalName,
-                  pathParameters: {'vehicleId': '${vehicle.id}'},
+                  pathParameters: {
+                    'vehicleId': '${vehicle.id}',
+                    'typeId': '${status.typeId}',
+                  },
                 ),
                 child: Text(_intervalLabel(status.interval)),
               ),

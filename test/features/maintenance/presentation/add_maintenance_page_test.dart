@@ -24,7 +24,7 @@ void main() {
   testWidgets('saves a record and shows it on the home screen', (tester) async {
     await openFormWithVehicle(tester);
 
-    expect(find.text('엔진오일 기록'), findsOneWidget);
+    expect(find.text('정비 기록'), findsOneWidget);
 
     await tester.enterText(
       find.widgetWithText(TextFormField, '정비 시 주행거리 (km)'),

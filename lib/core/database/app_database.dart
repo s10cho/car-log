@@ -1,16 +1,16 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'built_in_maintenance_types.dart';
 import 'tables/app_preferences.dart';
 import 'tables/maintenance_records.dart';
 import 'tables/maintenance_types.dart';
 import 'tables/vehicle_maintenance_settings.dart';
 import 'tables/vehicles.dart';
 
-part 'app_database.g.dart';
+export 'built_in_maintenance_types.dart' show engineOilTypeCode;
 
-/// Stable code of the only maintenance type seeded in Slice 1.
-const String engineOilTypeCode = 'engine_oil';
+part 'app_database.g.dart';
 
 /// The single source of truth for all local data.
 ///
@@ -32,13 +32,13 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.file(String name) : super(driftDatabase(name: name));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
-      await _seedBuiltInTypes();
+      await seedBuiltInTypes();
     },
     onUpgrade: (m, from, to) async {
       if (from < 2) {
@@ -46,7 +46,10 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(maintenanceTypes);
         await m.createTable(vehicleMaintenanceSettings);
         await m.createTable(maintenanceRecords);
-        await _seedBuiltInTypes();
+      }
+      if (from < 3) {
+        // v2 seeded 엔진오일 only; the rest of the catalogue arrives here.
+        await seedBuiltInTypes();
       }
     },
     beforeOpen: (details) async {
@@ -56,21 +59,22 @@ class AppDatabase extends _$AppDatabase {
     },
   );
 
-  /// Inserts the maintenance types the app ships with.
+  /// Inserts any built-in maintenance type that is not already present.
   ///
-  /// Only 엔진오일 for now: 10,000 km 또는 12개월 is the one interval the product
-  /// spec states outright. The rest of the catalogue lands in Slice 3 rather
-  /// than being invented here.
-  Future<void> _seedBuiltInTypes() async {
-    await into(maintenanceTypes).insert(
-      MaintenanceTypesCompanion.insert(
-        code: const Value(engineOilTypeCode),
-        name: '엔진오일',
-        isBuiltIn: const Value(true),
-        defaultDistanceInterval: const Value(10000),
-        defaultTimeIntervalMonths: const Value(12),
-      ),
-      mode: InsertMode.insertOrIgnore,
-    );
+  /// Matching is by [MaintenanceTypes.code], so re-running this never
+  /// duplicates a row and never overwrites a name or interval the user edited.
+  Future<void> seedBuiltInTypes() async {
+    await batch((batch) {
+      batch.insertAll(maintenanceTypes, [
+        for (final type in builtInMaintenanceTypes)
+          MaintenanceTypesCompanion.insert(
+            code: Value(type.code),
+            name: type.name,
+            isBuiltIn: const Value(true),
+            defaultDistanceInterval: Value(type.distanceInterval),
+            defaultTimeIntervalMonths: Value(type.timeIntervalMonths),
+          ),
+      ], mode: InsertMode.insertOrIgnore);
+    });
   }
 }

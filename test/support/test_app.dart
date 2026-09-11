@@ -1,6 +1,8 @@
 import 'package:car_log/app/app.dart';
 import 'package:car_log/app/config/app_config.dart';
+import 'package:car_log/core/database/app_database.dart';
 import 'package:car_log/core/database/database_providers.dart';
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,4 +40,19 @@ Future<void> settle(WidgetTester tester, {int frames = 10}) async {
   for (var i = 0; i < frames; i++) {
     await tester.pump(const Duration(milliseconds: 20));
   }
+}
+
+/// Reads the maintenance catalogue as a Future.
+///
+/// Widget tests must not await a Drift *stream* — the test binding holds the
+/// clock its timers wait on, so `watchTypes().first` never returns.
+Future<List<MaintenanceType>> readMaintenanceTypes(
+  ProviderContainer container,
+) {
+  final database = container.read(appDatabaseProvider);
+  return (database.select(database.maintenanceTypes)..orderBy([
+        (t) => OrderingTerm.desc(t.isBuiltIn),
+        (t) => OrderingTerm.asc(t.id),
+      ]))
+      .get();
 }

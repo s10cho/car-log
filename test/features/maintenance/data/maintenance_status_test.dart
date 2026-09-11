@@ -16,11 +16,10 @@ void main() {
 
   DateTime today = DateTime(2026, 3, 1);
 
-  Stream<MaintenanceStatus?> status([int? id]) => repository.watchStatus(
-    vehicleId: id ?? vehicleId,
-    typeCode: engineOilTypeCode,
-    clock: () => today,
-  );
+  /// 엔진오일 한 항목만 골라 본다. 나머지 기본 항목은 같은 쿼리로 함께 온다.
+  Stream<MaintenanceStatus?> status([int? id]) => repository
+      .watchStatuses(vehicleId: id ?? vehicleId, clock: () => today)
+      .map((all) => all.where((s) => s.typeId == engineOilTypeId).firstOrNull);
 
   setUp(() async {
     today = DateTime(2026, 3, 1);
@@ -47,8 +46,17 @@ void main() {
     expect(result.due, isNull);
   });
 
-  test('returns null for a vehicle that does not exist', () async {
+  test('returns nothing for a vehicle that does not exist', () async {
     expect(await status(999).first, isNull);
+    expect(await repository.watchStatuses(vehicleId: 999).first, isEmpty);
+  });
+
+  test('covers every built-in type, recorded or not', () async {
+    final all = await repository.watchStatuses(vehicleId: vehicleId).first;
+
+    expect(all.map((s) => s.typeName), contains('엔진오일'));
+    expect(all.map((s) => s.typeName), contains('와이퍼'));
+    expect(all.every((s) => s.hasRecord), isFalse);
   });
 
   test('projects the due point from the last record', () async {
