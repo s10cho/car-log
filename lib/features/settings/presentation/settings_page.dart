@@ -40,6 +40,12 @@ class SettingsPage extends ConsumerWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.pushNamed(AppRoutes.maintenanceTypesName),
           ),
+          ListTile(
+            leading: const Icon(Icons.backup_outlined),
+            title: const Text('백업 / 복원'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.pushNamed(AppRoutes.backupName),
+          ),
           const Divider(height: 1),
           ListTile(
             title: const Text('환경'),

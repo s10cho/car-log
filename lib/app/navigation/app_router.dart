@@ -9,6 +9,7 @@ import '../../features/maintenance/presentation/maintenance_interval_page.dart';
 import '../../features/maintenance/presentation/maintenance_types_page.dart';
 import '../../features/maintenance/presentation/record_page.dart';
 import '../../features/ai/presentation/ai_settings_page.dart';
+import '../../features/backup/presentation/backup_page.dart';
 import '../../features/notification/presentation/reminder_settings_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/vehicle/presentation/vehicle_form_page.dart';
@@ -110,6 +111,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           vehicleId: int.parse(state.pathParameters['vehicleId']!),
           typeId: int.parse(state.pathParameters['typeId']!),
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.backupPath,
+        name: AppRoutes.backupName,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const BackupPage(),
       ),
       GoRoute(
         path: AppRoutes.vehicleIntegrationPath,

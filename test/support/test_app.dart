@@ -112,3 +112,12 @@ Future<void> connectFakeAi(ProviderContainer container) async {
   await credentials.saveApiKey('fake', 'test-key');
   await credentials.select('fake');
 }
+
+/// Reads the vehicles as a Future, for the same reason as
+/// [readMaintenanceTypes]: a widget test must not await a Drift stream.
+Future<List<Vehicle>> readVehicles(ProviderContainer container) {
+  final database = container.read(appDatabaseProvider);
+  return (database.select(
+    database.vehicles,
+  )..orderBy([(v) => OrderingTerm.asc(v.createdAt)])).get();
+}

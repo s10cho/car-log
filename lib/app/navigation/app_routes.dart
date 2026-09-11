@@ -34,6 +34,9 @@ abstract final class AppRoutes {
       '/maintenance/detail/:vehicleId/:typeId';
   static const String maintenanceDetailName = 'maintenanceDetail';
 
+  static const String backupPath = '/settings/backup';
+  static const String backupName = 'backup';
+
   static const String vehicleIntegrationPath = '/settings/vehicle-integration';
   static const String vehicleIntegrationName = 'vehicleIntegration';
 

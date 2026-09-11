@@ -24,6 +24,13 @@ class FakeReceiptPicker implements ReceiptPicker {
     return next;
   }
 
+  /// Wraps an existing file, for flows that pick something other than an image.
+  static PickedReceipt fileFor(File file) => PickedReceipt(
+    file: file,
+    fileName: p.basename(file.path),
+    mimeType: mimeTypeForExtension(p.extension(file.path)),
+  );
+
   /// Builds a receipt backed by a real temporary file so widgets can read it.
   static PickedReceipt fileNamed(String name, [String contents = 'receipt']) {
     final directory = Directory.systemTemp.createTempSync('car_log_pick');

@@ -43,3 +43,8 @@ class AiProviderException extends AppException {
   /// Whether the key is wrong or rejected, which the user can fix in settings.
   final bool isCredentialProblem;
 }
+
+/// Exporting or restoring a backup failed.
+class BackupException extends AppException {
+  const BackupException(super.message, {super.cause, super.stackTrace});
+}
