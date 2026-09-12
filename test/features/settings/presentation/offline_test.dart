@@ -17,16 +17,21 @@ void main() {
     await tester.pumpWidget(app);
     await settle(tester);
 
-    // 차량 등록
+    // 차량 등록 (위저드: 차종 → 이름 → 주행거리 → 완료)
     await tester.tap(find.widgetWithText(FilledButton, '차량 등록'));
     await settle(tester);
-    await tester.enterText(find.widgetWithText(TextFormField, '차량 이름'), '아반떼');
-    await tester.enterText(
-      find.widgetWithText(TextFormField, '현재 주행거리 (km)'),
-      '32000',
-    );
-    await tester.tap(find.widgetWithText(FilledButton, '저장'));
+    await tester.tap(find.widgetWithText(FilledButton, '다음'));
     await settle(tester);
+    await tester.enterText(find.byType(TextField).first, '아반떼');
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '다음'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField).first, '32000');
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '다음'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '차고에 넣기'));
+    await settleAnimations(tester);
 
     // 정비 기록
     await tester.tap(find.byType(FloatingActionButton));
@@ -39,6 +44,7 @@ void main() {
     await settle(tester);
 
     // 다음 교체시기
+    await settleAnimations(tester);
     expect(find.text('43,000 km'), findsOneWidget);
 
     // 기록 조회

@@ -15,7 +15,7 @@ void main() {
       await tester.pumpWidget(app);
       await settle(tester);
 
-      expect(find.textContaining('주행거리를 업데이트하면'), findsNothing);
+      expect(find.textContaining('업데이트하면 더 정확해져요'), findsNothing);
     });
 
     testWidgets('appears once the reading is old', (tester) async {
@@ -31,7 +31,7 @@ void main() {
       await tester.pumpWidget(app);
       await settle(tester);
 
-      expect(find.textContaining('주행거리를 업데이트하면'), findsOneWidget);
+      expect(find.textContaining('업데이트하면 더 정확해져요'), findsOneWidget);
     });
 
     testWidgets('goes away after the user updates the odometer', (
@@ -52,10 +52,10 @@ void main() {
       await settle(tester);
       await tester.enterText(find.byType(TextFormField).last, '34000');
       await tester.tap(find.widgetWithText(FilledButton, '저장'));
-      await settle(tester);
+      await settleAnimations(tester);
 
-      expect(find.text('34,000 km'), findsOneWidget);
-      expect(find.textContaining('주행거리를 업데이트하면'), findsNothing);
+      expect(find.text('34,000 km'), findsWidgets);
+      expect(find.textContaining('업데이트하면 더 정확해져요'), findsNothing);
     });
   });
 

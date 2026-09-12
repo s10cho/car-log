@@ -29,10 +29,33 @@ void main() {
 
   /// Route transitions and the first database read take longer on a device
   /// than in a widget test, so this pumps generously.
-  Future<void> settle(WidgetTester tester, {int frames = 40}) async {
+  Future<void> settle(WidgetTester tester, {int frames = 60}) async {
     for (var i = 0; i < frames; i++) {
       await tester.pump(const Duration(milliseconds: 20));
     }
+  }
+
+  /// Walks the registration wizard: body style → name → mileage → finish.
+  ///
+  /// Registration asks one question at a time now, so a test cannot fill a
+  /// single form; it answers the same questions in order.
+  Future<void> registerVehicle(
+    WidgetTester tester, {
+    required String name,
+    required String mileage,
+  }) async {
+    await tester.tap(find.widgetWithText(FilledButton, '다음'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField).first, name);
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '다음'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField).first, mileage);
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '다음'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '차고에 넣기'));
+    await settle(tester);
   }
 
   /// Leaves no rows behind between runs; the database file is shared with the
@@ -58,20 +81,11 @@ void main() {
     await settle(tester);
 
     // 첫 실행 — 등록된 차량이 없다.
-    expect(find.text('아직 등록된 차량이 없습니다'), findsOneWidget);
+    expect(find.text('차고가 비어 있어요'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(FilledButton, '차량 등록'));
     await settle(tester);
-    await tester.enterText(
-      find.widgetWithText(TextFormField, '차량 이름'),
-      '내 아반떼',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, '현재 주행거리 (km)'),
-      '32000',
-    );
-    await tester.tap(find.widgetWithText(FilledButton, '저장'));
-    await settle(tester);
+    await registerVehicle(tester, name: '내 아반떼', mileage: '32000');
 
     expect(find.text('내 아반떼'), findsOneWidget);
     expect(find.text('32,000 km'), findsOneWidget);
@@ -120,7 +134,10 @@ void main() {
     await tester.pumpWidget(app(scope));
     await settle(tester);
 
-    await tester.tap(find.textContaining('교체주기'));
+    // 상태 카드를 눌러 상세로, 거기서 교체주기를 고친다.
+    await tester.tap(find.text('엔진오일').first);
+    await settle(tester);
+    await tester.tap(find.widgetWithText(TextButton, '수정'));
     await settle(tester);
 
     await tester.enterText(
@@ -130,7 +147,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, '저장'));
     await settle(tester);
 
-    expect(find.text('38,000 km'), findsOneWidget);
+    expect(find.textContaining('38,000 km'), findsWidgets);
   });
 
   testWidgets('a second vehicle keeps its own odometer and records', (
@@ -147,13 +164,7 @@ void main() {
     await settle(tester);
     await tester.tap(find.widgetWithText(OutlinedButton, '차량 추가'));
     await settle(tester);
-    await tester.enterText(find.widgetWithText(TextFormField, '차량 이름'), '카니발');
-    await tester.enterText(
-      find.widgetWithText(TextFormField, '현재 주행거리 (km)'),
-      '12000',
-    );
-    await tester.tap(find.widgetWithText(FilledButton, '저장'));
-    await settle(tester);
+    await registerVehicle(tester, name: '카니발', mileage: '12000');
     await tester.tap(find.byType(BackButton));
     await settle(tester);
 
@@ -169,7 +180,7 @@ void main() {
     await settle(tester);
 
     expect(find.text('33,000 km'), findsWidgets);
-    expect(find.text('38,000 km'), findsOneWidget);
+    expect(find.textContaining('38,000 km'), findsWidgets);
   });
 
   testWidgets('deleting a vehicle takes its records with it', (tester) async {
@@ -235,7 +246,6 @@ void main() {
 
     // 홈에 새 항목이 상태 카드로 올라온다.
     expect(find.text('하부 코팅'), findsWidgets);
-    expect(find.text('교체주기 24개월'), findsOneWidget);
   });
 
   testWidgets('a status card opens the maintenance detail', (tester) async {

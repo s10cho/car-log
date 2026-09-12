@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/navigation/app_routes.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/app_formats.dart';
+import '../../garage/domain/car_body_style.dart';
 import '../data/vehicle_repository.dart';
 
 /// The vehicle switcher: pick which car the app is showing, or manage the list.
@@ -56,17 +57,37 @@ class _VehicleTile extends ConsumerWidget {
       if (vehicle.modelYear case final int year) '$year년식',
     ].join(' · ');
 
+    final style = CarBodyStyle.fromId(vehicle.bodyStyle);
+
     return ListTile(
-      leading: Icon(
-        isCurrent ? Icons.check_circle : Icons.directions_car_outlined,
-        color: isCurrent
-            ? theme.colorScheme.primary
-            : theme.colorScheme.outline,
+      // The list uses the body style icon rather than a 3D view: a row of
+      // live scenes would render every frame for cars nobody is looking at.
+      leading: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(
+            style.icon,
+            size: 30,
+            color: isCurrent
+                ? theme.colorScheme.primary
+                : theme.colorScheme.outline,
+          ),
+          if (isCurrent)
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: Icon(
+                Icons.check_circle,
+                size: 14,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+        ],
       ),
       title: Text(vehicle.displayName),
       subtitle: Text(
         detail.isEmpty
-            ? formatKilometres(vehicle.currentMileage)
+            ? '${style.label} · ${formatKilometres(vehicle.currentMileage)}'
             : '$detail · ${formatKilometres(vehicle.currentMileage)}',
       ),
       trailing: PopupMenuButton<_VehicleAction>(

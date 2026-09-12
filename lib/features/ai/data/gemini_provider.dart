@@ -12,7 +12,15 @@ import 'ai_http.dart';
 class GeminiProvider implements AiProvider {
   GeminiProvider({http.Client? client, String? model})
     : _client = client ?? http.Client(),
-      _model = model ?? 'gemini-2.5-flash';
+      _model = model ?? defaultModel;
+
+  /// An alias rather than a pinned model on purpose.
+  ///
+  /// Google retires numbered models and closes them to new users: a pinned
+  /// `gemini-2.5-flash` already answers 404 with "no longer available to new
+  /// users". A shipped app cannot be updated fast enough to follow that, and
+  /// the alias always points at a current flash model.
+  static const String defaultModel = 'gemini-flash-latest';
 
   final http.Client _client;
   final String _model;
@@ -83,6 +91,11 @@ class GeminiProvider implements AiProvider {
     return parseReceiptAnalysis(decodeAiJson(text));
   }
 
+  /// The first part that actually carries text.
+  ///
+  /// Newer models interleave reasoning parts (`thoughtSignature`) with the
+  /// answer, so the first part is not reliably the text — reading only
+  /// `parts[0]` would sometimes come back empty.
   String? _firstText(Map<String, Object?> body) {
     final candidates = body['candidates'];
     if (candidates is! List || candidates.isEmpty) {
@@ -90,9 +103,15 @@ class GeminiProvider implements AiProvider {
     }
     final content = (candidates.first as Map<String, Object?>)['content'];
     final parts = (content as Map<String, Object?>?)?['parts'];
-    if (parts is! List || parts.isEmpty) {
+    if (parts is! List) {
       return null;
     }
-    return (parts.first as Map<String, Object?>)['text'] as String?;
+    for (final part in parts) {
+      final text = (part as Map<String, Object?>)['text'];
+      if (text is String && text.trim().isNotEmpty) {
+        return text;
+      }
+    }
+    return null;
   }
 }

@@ -208,6 +208,7 @@ void main() {
         '33000',
       );
       await tapAndAwaitIo(tester, find.widgetWithText(FilledButton, '저장'));
+      await settleAnimations(tester);
 
       expect(find.text('33,000 km'), findsWidgets);
     });

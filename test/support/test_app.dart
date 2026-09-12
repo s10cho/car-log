@@ -121,3 +121,28 @@ Future<List<Vehicle>> readVehicles(ProviderContainer container) {
     database.vehicles,
   )..orderBy([(v) => OrderingTerm.asc(v.createdAt)])).get();
 }
+
+/// Scrolls the current screen until [finder] is on screen.
+///
+/// The home screen is taller than a phone: the car and the score sit above the
+/// maintenance status, and the record list below it. A test asserting on
+/// something further down has to scroll, the same as a user.
+Future<void> scrollTo(WidgetTester tester, Finder finder) async {
+  // Screens carry more than one scrollable — a chip row or a badge strip
+  // inside the page's own list — so the target has to be named. The page's
+  // list is the outermost, and therefore the first in tree order.
+  await tester.scrollUntilVisible(
+    finder,
+    240,
+    scrollable: find.byType(Scrollable).first,
+    maxScrolls: 20,
+  );
+  await settle(tester);
+}
+
+/// Pumps long enough for the home screen's animations to land.
+///
+/// The odometer rolls up over about a second, so a test reading its text too
+/// early sees a number mid-count.
+Future<void> settleAnimations(WidgetTester tester) =>
+    settle(tester, frames: 80);

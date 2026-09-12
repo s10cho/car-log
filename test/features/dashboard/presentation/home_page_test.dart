@@ -13,7 +13,7 @@ void main() {
     await tester.pumpWidget(buildTestApp().app);
     await settle(tester);
 
-    expect(find.text('아직 등록된 차량이 없습니다'), findsOneWidget);
+    expect(find.text('차고가 비어 있어요'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, '차량 등록'), findsOneWidget);
     expect(find.byType(FloatingActionButton), findsNothing);
   });
@@ -27,11 +27,11 @@ void main() {
         .create(displayName: '내 아반떼', currentMileage: 32000);
 
     await tester.pumpWidget(app);
-    await settle(tester);
+    await settleAnimations(tester);
 
     expect(find.text('내 아반떼'), findsOneWidget);
     expect(find.text('32,000 km'), findsOneWidget);
-    expect(find.text('아직 등록된 차량이 없습니다'), findsNothing);
+    expect(find.text('차고가 비어 있어요'), findsNothing);
   });
 
   testWidgets('lists nothing to track until something is recorded', (
@@ -71,8 +71,7 @@ void main() {
 
     expect(find.text('41,000 km'), findsOneWidget);
     expect(find.text('2027.02.01'), findsOneWidget);
-    expect(find.text('마지막 교체 2026.02.01 · 31,000 km'), findsOneWidget);
-    expect(find.text('교체주기 10,000 km 또는 12개월'), findsOneWidget);
+    expect(find.text('마지막 2026.02.01 · 31,000 km'), findsOneWidget);
   });
 
   testWidgets('marks an overdue item', (tester) async {
@@ -111,6 +110,7 @@ void main() {
 
     await tester.pumpWidget(app);
     await settle(tester);
+    await scrollTo(tester, find.text('31,000 km · 80,000원 · 동네카센터'));
 
     expect(find.text('31,000 km · 80,000원 · 동네카센터'), findsOneWidget);
   });
@@ -166,7 +166,6 @@ void main() {
     await settle(tester);
 
     expect(find.text('36,000 km'), findsOneWidget);
-    expect(find.text('교체주기 5,000 km 또는 6개월'), findsOneWidget);
   });
 
   testWidgets('lists several tracked items, most pressing first', (
@@ -198,19 +197,23 @@ void main() {
     await tester.pumpWidget(app);
     await settle(tester);
 
-    expect(find.text('엔진오일'), findsOneWidget);
-    expect(find.text('냉각수'), findsOneWidget);
-    // 기록하지 않은 항목은 홈에 나오지 않는다.
-    expect(find.text('와이퍼'), findsNothing);
-
-    final cards = tester
-        .widgetList<Text>(find.byType(Text))
-        .map((t) => t.data)
+    // 스크롤하지 않고 보이는 첫 상태 카드가 가장 급한 항목이어야 한다.
+    List<String> visibleCardTitles() => tester
+        .widgetList<Text>(
+          find.descendant(of: find.byType(Card), matching: find.byType(Text)),
+        )
+        .map((text) => text.data)
         .whereType<String>()
+        .where((text) => ['엔진오일', '냉각수', '와이퍼'].contains(text))
         .toList();
-    expect(cards.indexOf('엔진오일'), lessThan(cards.indexOf('냉각수')));
+
+    expect(visibleCardTitles().first, '엔진오일', reason: '급한 것이 먼저 온다');
     expect(find.text('지남'), findsOneWidget);
-    expect(find.text('여유'), findsOneWidget);
+
+    await scrollTo(tester, find.text('여유'));
+    expect(visibleCardTitles(), contains('냉각수'));
+    // 기록하지 않은 항목은 홈에 나오지 않는다.
+    expect(visibleCardTitles(), isNot(contains('와이퍼')));
   });
 
   testWidgets('recording a different item adds it to the home list', (

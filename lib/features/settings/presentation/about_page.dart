@@ -17,7 +17,7 @@ class AboutPage extends StatelessWidget {
             children: [
               ListTile(
                 title: const Text('앱'),
-                subtitle: Text(info?.appName ?? '차계부'),
+                subtitle: Text(info?.appName ?? 'Car로그'),
               ),
               ListTile(
                 title: const Text('버전'),
@@ -32,7 +32,7 @@ class AboutPage extends StatelessWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => showLicensePage(
                   context: context,
-                  applicationName: info?.appName ?? '차계부',
+                  applicationName: info?.appName ?? 'Car로그',
                   applicationVersion: info?.version,
                 ),
               ),

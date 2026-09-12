@@ -10,6 +10,7 @@ import '../../ai/domain/receipt_analysis.dart';
 import '../../ai/presentation/ai_consent_dialog.dart';
 import '../../receipt/data/receipt_picker.dart';
 import '../../receipt/domain/picked_receipt.dart';
+import '../../garage/presentation/celebration.dart';
 import '../../receipt/presentation/receipt_picker_sheet.dart';
 import '../../vehicle/data/vehicle_repository.dart';
 import '../data/maintenance_repository.dart';
@@ -140,6 +141,10 @@ class _MaintenanceRecordFormPageState
         );
       }
       if (mounted) {
+        celebrate(
+          context,
+          message: widget.isEditing ? '기록을 수정했습니다' : '기록했습니다. 잘 관리하고 있어요',
+        );
         Navigator.of(context).pop();
       }
     } on Object {

@@ -17,6 +17,10 @@ class Vehicles extends Table {
   TextColumn get vin => text().nullable()();
   TextColumn get licensePlate => text().nullable()();
 
+  /// Which 3D body shape represents this vehicle. Null for vehicles created
+  /// before body styles existed; the UI falls back to a sedan.
+  TextColumn get bodyStyle => text().nullable()();
+
   /// Odometer reading in kilometres, and when the user last confirmed it.
   IntColumn get currentMileage => integer()();
   DateTimeColumn get mileageUpdatedAt => dateTime()();

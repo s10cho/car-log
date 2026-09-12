@@ -15,6 +15,7 @@ import '../../features/settings/presentation/about_page.dart';
 import '../../features/settings/presentation/privacy_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/vehicle/presentation/vehicle_form_page.dart';
+import '../../features/vehicle/presentation/vehicle_wizard_page.dart';
 import '../../features/vehicle/presentation/vehicle_integration_page.dart';
 import '../../features/vehicle/presentation/vehicle_list_page.dart';
 import 'app_routes.dart';
@@ -72,7 +73,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.addVehiclePath,
         name: AppRoutes.addVehicleName,
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const VehicleFormPage(),
+        builder: (context, state) => const VehicleWizardPage(),
       ),
       GoRoute(
         path: AppRoutes.editVehiclePath,

@@ -12,6 +12,7 @@ import '../../../core/database/app_database.dart';
 Map<String, Object?> vehicleToJson(Vehicle row) => {
   'id': row.id,
   'display_name': row.displayName,
+  'body_style': row.bodyStyle,
   'manufacturer': row.manufacturer,
   'model': row.model,
   'model_year': row.modelYear,
@@ -27,6 +28,7 @@ VehiclesCompanion vehicleFromJson(Map<String, Object?> json) =>
     VehiclesCompanion.insert(
       id: Value(_int(json['id'])!),
       displayName: _string(json['display_name']) ?? '이름 없는 차량',
+      bodyStyle: Value(_string(json['body_style'])),
       manufacturer: Value(_string(json['manufacturer'])),
       model: Value(_string(json['model'])),
       modelYear: Value(_int(json['model_year'])),

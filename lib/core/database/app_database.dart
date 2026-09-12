@@ -34,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.file(String name) : super(driftDatabase(name: name));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -71,6 +71,9 @@ class AppDatabase extends _$AppDatabase {
           maintenanceRecords,
           maintenanceRecords.receiptAssetId,
         );
+      }
+      if (from >= 2 && from < 6) {
+        await m.addColumn(vehicles, vehicles.bodyStyle);
       }
     },
     beforeOpen: (details) async {

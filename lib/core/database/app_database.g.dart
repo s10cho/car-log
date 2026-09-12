@@ -349,6 +349,17 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _bodyStyleMeta = const VerificationMeta(
+    'bodyStyle',
+  );
+  @override
+  late final GeneratedColumn<String> bodyStyle = GeneratedColumn<String>(
+    'body_style',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _currentMileageMeta = const VerificationMeta(
     'currentMileage',
   );
@@ -403,6 +414,7 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
     modelYear,
     vin,
     licensePlate,
+    bodyStyle,
     currentMileage,
     mileageUpdatedAt,
     createdAt,
@@ -468,6 +480,12 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
           data['license_plate']!,
           _licensePlateMeta,
         ),
+      );
+    }
+    if (data.containsKey('body_style')) {
+      context.handle(
+        _bodyStyleMeta,
+        bodyStyle.isAcceptableOrUnknown(data['body_style']!, _bodyStyleMeta),
       );
     }
     if (data.containsKey('current_mileage')) {
@@ -545,6 +563,10 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
         DriftSqlType.string,
         data['${effectivePrefix}license_plate'],
       ),
+      bodyStyle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body_style'],
+      ),
       currentMileage: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}current_mileage'],
@@ -584,6 +606,10 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
   final String? vin;
   final String? licensePlate;
 
+  /// Which 3D body shape represents this vehicle. Null for vehicles created
+  /// before body styles existed; the UI falls back to a sedan.
+  final String? bodyStyle;
+
   /// Odometer reading in kilometres, and when the user last confirmed it.
   final int currentMileage;
   final DateTime mileageUpdatedAt;
@@ -597,6 +623,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     this.modelYear,
     this.vin,
     this.licensePlate,
+    this.bodyStyle,
     required this.currentMileage,
     required this.mileageUpdatedAt,
     required this.createdAt,
@@ -622,6 +649,9 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     if (!nullToAbsent || licensePlate != null) {
       map['license_plate'] = Variable<String>(licensePlate);
     }
+    if (!nullToAbsent || bodyStyle != null) {
+      map['body_style'] = Variable<String>(bodyStyle);
+    }
     map['current_mileage'] = Variable<int>(currentMileage);
     map['mileage_updated_at'] = Variable<DateTime>(mileageUpdatedAt);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -646,6 +676,9 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       licensePlate: licensePlate == null && nullToAbsent
           ? const Value.absent()
           : Value(licensePlate),
+      bodyStyle: bodyStyle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bodyStyle),
       currentMileage: Value(currentMileage),
       mileageUpdatedAt: Value(mileageUpdatedAt),
       createdAt: Value(createdAt),
@@ -666,6 +699,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       modelYear: serializer.fromJson<int?>(json['modelYear']),
       vin: serializer.fromJson<String?>(json['vin']),
       licensePlate: serializer.fromJson<String?>(json['licensePlate']),
+      bodyStyle: serializer.fromJson<String?>(json['bodyStyle']),
       currentMileage: serializer.fromJson<int>(json['currentMileage']),
       mileageUpdatedAt: serializer.fromJson<DateTime>(json['mileageUpdatedAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -683,6 +717,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       'modelYear': serializer.toJson<int?>(modelYear),
       'vin': serializer.toJson<String?>(vin),
       'licensePlate': serializer.toJson<String?>(licensePlate),
+      'bodyStyle': serializer.toJson<String?>(bodyStyle),
       'currentMileage': serializer.toJson<int>(currentMileage),
       'mileageUpdatedAt': serializer.toJson<DateTime>(mileageUpdatedAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -698,6 +733,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     Value<int?> modelYear = const Value.absent(),
     Value<String?> vin = const Value.absent(),
     Value<String?> licensePlate = const Value.absent(),
+    Value<String?> bodyStyle = const Value.absent(),
     int? currentMileage,
     DateTime? mileageUpdatedAt,
     DateTime? createdAt,
@@ -710,6 +746,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     modelYear: modelYear.present ? modelYear.value : this.modelYear,
     vin: vin.present ? vin.value : this.vin,
     licensePlate: licensePlate.present ? licensePlate.value : this.licensePlate,
+    bodyStyle: bodyStyle.present ? bodyStyle.value : this.bodyStyle,
     currentMileage: currentMileage ?? this.currentMileage,
     mileageUpdatedAt: mileageUpdatedAt ?? this.mileageUpdatedAt,
     createdAt: createdAt ?? this.createdAt,
@@ -730,6 +767,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       licensePlate: data.licensePlate.present
           ? data.licensePlate.value
           : this.licensePlate,
+      bodyStyle: data.bodyStyle.present ? data.bodyStyle.value : this.bodyStyle,
       currentMileage: data.currentMileage.present
           ? data.currentMileage.value
           : this.currentMileage,
@@ -751,6 +789,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
           ..write('modelYear: $modelYear, ')
           ..write('vin: $vin, ')
           ..write('licensePlate: $licensePlate, ')
+          ..write('bodyStyle: $bodyStyle, ')
           ..write('currentMileage: $currentMileage, ')
           ..write('mileageUpdatedAt: $mileageUpdatedAt, ')
           ..write('createdAt: $createdAt, ')
@@ -768,6 +807,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     modelYear,
     vin,
     licensePlate,
+    bodyStyle,
     currentMileage,
     mileageUpdatedAt,
     createdAt,
@@ -784,6 +824,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
           other.modelYear == this.modelYear &&
           other.vin == this.vin &&
           other.licensePlate == this.licensePlate &&
+          other.bodyStyle == this.bodyStyle &&
           other.currentMileage == this.currentMileage &&
           other.mileageUpdatedAt == this.mileageUpdatedAt &&
           other.createdAt == this.createdAt &&
@@ -798,6 +839,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
   final Value<int?> modelYear;
   final Value<String?> vin;
   final Value<String?> licensePlate;
+  final Value<String?> bodyStyle;
   final Value<int> currentMileage;
   final Value<DateTime> mileageUpdatedAt;
   final Value<DateTime> createdAt;
@@ -810,6 +852,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     this.modelYear = const Value.absent(),
     this.vin = const Value.absent(),
     this.licensePlate = const Value.absent(),
+    this.bodyStyle = const Value.absent(),
     this.currentMileage = const Value.absent(),
     this.mileageUpdatedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -823,6 +866,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     this.modelYear = const Value.absent(),
     this.vin = const Value.absent(),
     this.licensePlate = const Value.absent(),
+    this.bodyStyle = const Value.absent(),
     required int currentMileage,
     required DateTime mileageUpdatedAt,
     required DateTime createdAt,
@@ -840,6 +884,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     Expression<int>? modelYear,
     Expression<String>? vin,
     Expression<String>? licensePlate,
+    Expression<String>? bodyStyle,
     Expression<int>? currentMileage,
     Expression<DateTime>? mileageUpdatedAt,
     Expression<DateTime>? createdAt,
@@ -853,6 +898,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
       if (modelYear != null) 'model_year': modelYear,
       if (vin != null) 'vin': vin,
       if (licensePlate != null) 'license_plate': licensePlate,
+      if (bodyStyle != null) 'body_style': bodyStyle,
       if (currentMileage != null) 'current_mileage': currentMileage,
       if (mileageUpdatedAt != null) 'mileage_updated_at': mileageUpdatedAt,
       if (createdAt != null) 'created_at': createdAt,
@@ -868,6 +914,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     Value<int?>? modelYear,
     Value<String?>? vin,
     Value<String?>? licensePlate,
+    Value<String?>? bodyStyle,
     Value<int>? currentMileage,
     Value<DateTime>? mileageUpdatedAt,
     Value<DateTime>? createdAt,
@@ -881,6 +928,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
       modelYear: modelYear ?? this.modelYear,
       vin: vin ?? this.vin,
       licensePlate: licensePlate ?? this.licensePlate,
+      bodyStyle: bodyStyle ?? this.bodyStyle,
       currentMileage: currentMileage ?? this.currentMileage,
       mileageUpdatedAt: mileageUpdatedAt ?? this.mileageUpdatedAt,
       createdAt: createdAt ?? this.createdAt,
@@ -912,6 +960,9 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     if (licensePlate.present) {
       map['license_plate'] = Variable<String>(licensePlate.value);
     }
+    if (bodyStyle.present) {
+      map['body_style'] = Variable<String>(bodyStyle.value);
+    }
     if (currentMileage.present) {
       map['current_mileage'] = Variable<int>(currentMileage.value);
     }
@@ -937,6 +988,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
           ..write('modelYear: $modelYear, ')
           ..write('vin: $vin, ')
           ..write('licensePlate: $licensePlate, ')
+          ..write('bodyStyle: $bodyStyle, ')
           ..write('currentMileage: $currentMileage, ')
           ..write('mileageUpdatedAt: $mileageUpdatedAt, ')
           ..write('createdAt: $createdAt, ')
@@ -3095,6 +3147,7 @@ typedef $$VehiclesTableCreateCompanionBuilder = VehiclesCompanion Function({
   Value<int?> modelYear,
   Value<String?> vin,
   Value<String?> licensePlate,
+  Value<String?> bodyStyle,
   required int currentMileage,
   required DateTime mileageUpdatedAt,
   required DateTime createdAt,
@@ -3108,6 +3161,7 @@ typedef $$VehiclesTableUpdateCompanionBuilder = VehiclesCompanion Function({
   Value<int?> modelYear,
   Value<String?> vin,
   Value<String?> licensePlate,
+  Value<String?> bodyStyle,
   Value<int> currentMileage,
   Value<DateTime> mileageUpdatedAt,
   Value<DateTime> createdAt,
@@ -3206,6 +3260,11 @@ class $$VehiclesTableFilterComposer
 
   ColumnFilters<String> get licensePlate => $composableBuilder(
     column: $table.licensePlate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bodyStyle => $composableBuilder(
+    column: $table.bodyStyle,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3326,6 +3385,11 @@ class $$VehiclesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get bodyStyle => $composableBuilder(
+    column: $table.bodyStyle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get currentMileage => $composableBuilder(
     column: $table.currentMileage,
     builder: (column) => ColumnOrderings(column),
@@ -3382,6 +3446,9 @@ class $$VehiclesTableAnnotationComposer
     column: $table.licensePlate,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get bodyStyle =>
+      $composableBuilder(column: $table.bodyStyle, builder: (column) => column);
 
   GeneratedColumn<int> get currentMileage => $composableBuilder(
     column: $table.currentMileage,
@@ -3493,6 +3560,7 @@ class $$VehiclesTableTableManager
                 Value<int?> modelYear = const Value.absent(),
                 Value<String?> vin = const Value.absent(),
                 Value<String?> licensePlate = const Value.absent(),
+                Value<String?> bodyStyle = const Value.absent(),
                 Value<int> currentMileage = const Value.absent(),
                 Value<DateTime> mileageUpdatedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -3505,6 +3573,7 @@ class $$VehiclesTableTableManager
                 modelYear: modelYear,
                 vin: vin,
                 licensePlate: licensePlate,
+                bodyStyle: bodyStyle,
                 currentMileage: currentMileage,
                 mileageUpdatedAt: mileageUpdatedAt,
                 createdAt: createdAt,
@@ -3519,6 +3588,7 @@ class $$VehiclesTableTableManager
                 Value<int?> modelYear = const Value.absent(),
                 Value<String?> vin = const Value.absent(),
                 Value<String?> licensePlate = const Value.absent(),
+                Value<String?> bodyStyle = const Value.absent(),
                 required int currentMileage,
                 required DateTime mileageUpdatedAt,
                 required DateTime createdAt,
@@ -3531,6 +3601,7 @@ class $$VehiclesTableTableManager
                 modelYear: modelYear,
                 vin: vin,
                 licensePlate: licensePlate,
+                bodyStyle: bodyStyle,
                 currentMileage: currentMileage,
                 mileageUpdatedAt: mileageUpdatedAt,
                 createdAt: createdAt,

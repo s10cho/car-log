@@ -8,7 +8,7 @@ void main() {
     await tester.pumpWidget(buildTestApp().app);
     await settle(tester);
 
-    expect(find.text('아직 등록된 차량이 없습니다'), findsOneWidget);
+    expect(find.text('차고가 비어 있어요'), findsOneWidget);
   });
 
   testWidgets('bottom navigation switches between 홈, 기록 and 설정', (
@@ -27,7 +27,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.home_outlined));
     await settle(tester);
-    expect(find.text('아직 등록된 차량이 없습니다'), findsOneWidget);
+    expect(find.text('차고가 비어 있어요'), findsOneWidget);
   });
 
   testWidgets('settings shows the active environment', (tester) async {

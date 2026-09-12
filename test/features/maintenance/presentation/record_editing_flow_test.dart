@@ -86,7 +86,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, '저장'));
     await settle(tester);
     await tester.tap(find.byIcon(Icons.home_outlined));
-    await settle(tester);
+    await settleAnimations(tester);
 
     expect(find.text('38,000 km'), findsWidgets);
   });

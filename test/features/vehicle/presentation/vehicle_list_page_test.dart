@@ -64,15 +64,16 @@ void main() {
     await settle(tester);
 
     // 기본은 가장 먼저 등록한 차량.
+    await settleAnimations(tester);
     expect(find.text('32,000 km'), findsOneWidget);
     expect(find.text('41,000 km'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.expand_more));
     await settle(tester);
     await tester.tap(find.text('카니발'));
-    await settle(tester);
+    await settleAnimations(tester);
 
-    expect(find.text('12,000 km'), findsOneWidget);
+    expect(find.text('12,000 km'), findsWidgets);
     expect(find.text('21,000 km'), findsOneWidget);
     expect(find.text('41,000 km'), findsNothing);
   });
@@ -100,20 +101,26 @@ void main() {
 
     await tester.tap(find.widgetWithText(OutlinedButton, '차량 추가'));
     await settle(tester);
-    await tester.enterText(find.widgetWithText(TextFormField, '차량 이름'), '트럭');
-    await tester.enterText(
-      find.widgetWithText(TextFormField, '현재 주행거리 (km)'),
-      '5000',
-    );
-    await tester.tap(find.widgetWithText(FilledButton, '저장'));
+    // 위저드: 차종 → 이름 → 주행거리 → 완료
+    await tester.tap(find.widgetWithText(FilledButton, '다음'));
     await settle(tester);
+    await tester.enterText(find.byType(TextField).first, '트럭');
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '다음'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField).first, '5000');
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '다음'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '차고에 넣기'));
+    await settleAnimations(tester);
 
-    // 목록으로 돌아온 뒤 홈까지 나간다.
+    // 목록으로 돌아온 뒤 홈까지 나간다. 주행거리는 굴러가며 표시되므로 기다린다.
     await tester.tap(find.byType(BackButton));
-    await settle(tester);
+    await settleAnimations(tester);
 
-    expect(find.text('트럭'), findsOneWidget);
-    expect(find.text('5,000 km'), findsOneWidget);
+    expect(find.text('트럭'), findsWidgets);
+    expect(find.text('5,000 km'), findsWidgets);
   });
 
   testWidgets('editing a vehicle renames it everywhere', (tester) async {
@@ -156,7 +163,8 @@ void main() {
 
     expect(find.text('내 아반떼'), findsNothing);
     expect(find.text('카니발'), findsOneWidget);
-    expect(find.text('12,000 km'), findsOneWidget);
+    await settleAnimations(tester);
+    expect(find.text('12,000 km'), findsWidgets);
   });
 
   testWidgets('cancelling the delete dialog keeps the vehicle', (tester) async {
@@ -191,6 +199,6 @@ void main() {
     await tester.tap(find.byType(BackButton));
     await settle(tester);
 
-    expect(find.text('아직 등록된 차량이 없습니다'), findsOneWidget);
+    expect(find.text('차고가 비어 있어요'), findsOneWidget);
   });
 }

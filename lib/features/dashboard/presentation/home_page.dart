@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,6 +10,12 @@ import '../../../app/config/app_config.dart';
 import '../../../app/navigation/app_routes.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/formatting/app_formats.dart';
+import '../../garage/data/garage_providers.dart';
+import '../../garage/domain/car_body_style.dart';
+import '../../garage/domain/care_score.dart';
+import '../../garage/presentation/garage_stage.dart';
+import '../../garage/presentation/milestone_strip.dart';
+import '../../garage/presentation/rolling_odometer.dart';
 import '../../maintenance/data/maintenance_repository.dart';
 import '../../maintenance/domain/maintenance_schedule.dart';
 import '../../maintenance/domain/maintenance_status.dart';
@@ -14,9 +23,10 @@ import '../../maintenance/presentation/maintenance_record_tile.dart';
 import '../../vehicle/data/vehicle_repository.dart';
 import '../../vehicle/domain/mileage_freshness.dart';
 
-/// The screen the app opens on: what needs doing, and how to record what was
-/// just done. It renders entirely from local data, so it never waits on a
-/// network call to appear.
+/// The screen the app opens on: how the car is doing, and what to do next.
+///
+/// It renders entirely from local data, so it never waits on a network call to
+/// appear.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -29,7 +39,7 @@ class HomePage extends ConsumerWidget {
       appBar: AppBar(
         title: switch (vehicleAsync.value) {
           final Vehicle vehicle => _VehicleSelectorTitle(vehicle: vehicle),
-          null => const Text('홈'),
+          null => const Text('차고'),
         },
         actions: [
           if (config.isDev)
@@ -55,7 +65,10 @@ class HomePage extends ConsumerWidget {
       floatingActionButton: vehicleAsync.value == null
           ? null
           : FloatingActionButton.extended(
-              onPressed: () => context.pushNamed(AppRoutes.addMaintenanceName),
+              onPressed: () {
+                unawaited(HapticFeedback.selectionClick());
+                context.pushNamed(AppRoutes.addMaintenanceName);
+              },
               icon: const Icon(Icons.add),
               label: const Text('기록'),
             ),
@@ -63,8 +76,7 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-/// The app bar title doubles as the vehicle switcher: the name of the car you
-/// are looking at, and a way to get to the others.
+/// The app bar title doubles as the vehicle switcher.
 class _VehicleSelectorTitle extends StatelessWidget {
   const _VehicleSelectorTitle({required this.vehicle});
 
@@ -104,16 +116,23 @@ class _NoVehicle extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.directions_car_outlined,
-              size: 64,
-              color: theme.colorScheme.outline,
-            ),
-            const SizedBox(height: 16),
-            Text('아직 등록된 차량이 없습니다', style: theme.textTheme.titleMedium),
+            // An empty garage still shows a car — the app looks like what it
+            // is for before anything has been entered.
+            const GarageStage(
+              style: CarBodyStyle.sedan,
+              score: CareScore(
+                value: 0,
+                overdue: 0,
+                dueSoon: 0,
+                healthy: 0,
+                mileageStale: false,
+              ),
+            ).animate().fadeIn(duration: 500.ms).scaleXY(begin: 0.94, end: 1),
+            const SizedBox(height: 24),
+            Text('차고가 비어 있어요', style: theme.textTheme.titleLarge),
             const SizedBox(height: 8),
             Text(
-              '차량을 등록하면 정비 이력과 다음 교체 시기를 여기에서 확인할 수 있습니다.',
+              '차를 등록하면 정비 이력과 다음 교체 시기를 여기에서 확인할 수 있습니다.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -124,7 +143,8 @@ class _NoVehicle extends StatelessWidget {
               onPressed: () => context.pushNamed(AppRoutes.addVehicleName),
               icon: const Icon(Icons.add),
               label: const Text('차량 등록'),
-            ),
+              style: FilledButton.styleFrom(minimumSize: const Size(200, 52)),
+            ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.3, end: 0),
           ],
         ),
       ),
@@ -154,8 +174,10 @@ class _VehicleHome extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final score = ref.watch(careScoreProvider);
     final tracked = ref.watch(trackedMaintenanceProvider);
     final records = ref.watch(maintenanceRecordsProvider).value ?? const [];
+    final milestones = ref.watch(milestonesProvider);
     final statuses =
         ref.watch(maintenanceStatusesProvider).value ??
         const <MaintenanceStatus>[];
@@ -166,8 +188,13 @@ class _VehicleHome extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
       children: [
-        _MileageCard(vehicle: vehicle),
-        const SizedBox(height: 24),
+        GarageStage(
+          style: CarBodyStyle.fromId(vehicle.bodyStyle),
+          score: score,
+        ),
+        const SizedBox(height: 8),
+        _MileageStrip(vehicle: vehicle, score: score),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(child: Text('정비 상태', style: theme.textTheme.titleMedium)),
@@ -180,26 +207,26 @@ class _VehicleHome extends ConsumerWidget {
         ),
         const SizedBox(height: 4),
         if (tracked.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              '정비를 기록하면 다음 교체 시기를 여기에서 확인할 수 있습니다.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          )
+          _EmptyStatusHint()
         else
-          for (final status in tracked) ...[
-            _StatusCard(vehicle: vehicle, status: status),
-            const SizedBox(height: 8),
-          ],
+          for (final (index, status) in tracked.indexed)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _StatusCard(vehicle: vehicle, status: status)
+                  .animate()
+                  .fadeIn(delay: (60 * index).ms, duration: 300.ms)
+                  .slideX(begin: 0.06, end: 0, curve: Curves.easeOutCubic),
+            ),
         const SizedBox(height: 16),
-        Text('최근 기록', style: theme.textTheme.titleMedium),
+        Text('기록', style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
+        MilestoneStrip(milestones: milestones),
+        const SizedBox(height: 20),
+        Text('최근 정비', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 4),
         if (records.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
               '아직 기록이 없습니다. 정비를 마쳤다면 아래 버튼으로 남겨 두세요.',
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -218,60 +245,69 @@ class _VehicleHome extends ConsumerWidget {
   }
 }
 
-class _MileageCard extends ConsumerWidget {
-  const _MileageCard({required this.vehicle});
+class _EmptyStatusHint extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Text(
+        '정비를 기록하면 다음 교체 시기를 여기에서 확인할 수 있습니다.',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+/// The odometer line under the stage.
+///
+/// One row rather than a card: the score already sits on the stage, and the
+/// screen's job is to get the user to the maintenance status without scrolling.
+class _MileageStrip extends ConsumerWidget {
+  const _MileageStrip({required this.vehicle, required this.score});
 
   final Vehicle vehicle;
+  final CareScore score;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+    final stale = isMileageStale(
+      updatedAt: vehicle.mileageUpdatedAt,
+      now: DateTime.now(),
+    );
+
+    return Row(
+      children: [
+        Icon(Icons.speed_outlined, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 10),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('현재 주행거리', style: theme.textTheme.labelLarge),
-                  const SizedBox(height: 4),
-                  Text(
-                    formatKilometres(vehicle.currentMileage),
-                    style: theme.textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${formatDate(vehicle.mileageUpdatedAt)} 기준',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  if (isMileageStale(
-                    updatedAt: vehicle.mileageUpdatedAt,
-                    now: DateTime.now(),
-                  )) ...[
-                    const SizedBox(height: 8),
-                    // A stale odometer makes every distance-based due point
-                    // quietly wrong, and nothing on screen would show it.
-                    Text(
-                      '주행거리를 업데이트하면 다음 교체 시기를 더 정확히 알려 드립니다.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.tertiary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+            RollingOdometer(
+              kilometres: vehicle.currentMileage,
+              style: theme.textTheme.titleLarge,
             ),
-            TextButton(
-              onPressed: () => _editMileage(context, ref, vehicle),
-              child: const Text('수정'),
+            Text(
+              stale
+                  ? '업데이트하면 더 정확해져요'
+                  : '${formatDate(vehicle.mileageUpdatedAt)} 기준',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: stale
+                    ? theme.colorScheme.tertiary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
-      ),
+        const Spacer(),
+        TextButton(
+          onPressed: () => editMileage(context, ref, vehicle),
+          child: const Text('수정'),
+        ),
+      ],
     );
   }
 }
@@ -313,7 +349,7 @@ class _StatusCard extends StatelessWidget {
                   if (due != null) _UrgencyChip(urgency: due.urgency),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               if (!status.hasRecord)
                 Text(
                   '아직 기록이 없어 다음 교체 시기를 계산할 수 없습니다.',
@@ -322,14 +358,6 @@ class _StatusCard extends StatelessWidget {
                   ),
                 )
               else ...[
-                Text(
-                  '마지막 교체 ${formatDate(status.lastServiceDate!)}'
-                  ' · ${formatKilometres(status.lastServiceMileage!)}',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
                 if (due?.dueMileage != null)
                   _DueRow(
                     icon: Icons.speed_outlined,
@@ -344,35 +372,21 @@ class _StatusCard extends StatelessWidget {
                     detail: formatRemainingDays(due.remainingDays!),
                   ),
                 ],
-              ],
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => context.pushNamed(
-                    AppRoutes.maintenanceIntervalName,
-                    pathParameters: {
-                      'vehicleId': '${vehicle.id}',
-                      'typeId': '${status.typeId}',
-                    },
+                const SizedBox(height: 8),
+                Text(
+                  '마지막 ${formatDate(status.lastServiceDate!)}'
+                  ' · ${formatKilometres(status.lastServiceMileage!)}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                  child: Text(_intervalLabel(status.interval)),
                 ),
-              ),
+              ],
             ],
           ),
         ),
       ),
     );
   }
-}
-
-String _intervalLabel(MaintenanceInterval interval) {
-  final parts = <String>[
-    if (interval.distanceKm case final int km) formatKilometres(km),
-    if (interval.months case final int months) '$months개월',
-  ];
-  return parts.isEmpty ? '교체주기 설정' : '교체주기 ${parts.join(' 또는 ')}';
 }
 
 class _DueRow extends StatelessWidget {
@@ -447,7 +461,10 @@ class _UrgencyChip extends StatelessWidget {
   }
 }
 
-Future<void> _editMileage(
+/// Asks for a fresh odometer reading.
+///
+/// Shared with the vehicle list, which offers the same correction.
+Future<void> editMileage(
   BuildContext context,
   WidgetRef ref,
   Vehicle vehicle,
@@ -459,6 +476,7 @@ Future<void> _editMileage(
   );
 
   if (value != null) {
+    unawaited(HapticFeedback.selectionClick());
     await ref.read(vehicleRepositoryProvider).updateMileage(vehicle.id, value);
   }
 }

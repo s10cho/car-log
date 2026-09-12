@@ -233,4 +233,69 @@ void main() {
       expect(provider.credentialHelpUrl, startsWith('https://'));
     }
   });
+
+  group('answers with reasoning parts', () {
+    test('the text is found even when a thought part comes first', () async {
+      // 최신 Gemini 모델은 추론 파트를 답변 앞에 끼워 보낸다. parts[0] 만 읽으면
+      // 내용이 비어 보인다.
+      final provider = GeminiProvider(
+        client: clientReturning(
+          jsonEncode({
+            'candidates': [
+              {
+                'content': {
+                  'parts': [
+                    {'thoughtSignature': 'abc'},
+                    {'text': answer},
+                  ],
+                },
+              },
+            ],
+          }),
+        ),
+      );
+
+      final analysis = await provider.analyzeReceipt(
+        image: receipt,
+        apiKey: 'k',
+        knownItems: const [],
+      );
+
+      expect(analysis.cost, 80000);
+      expect(analysis.shopName, '동네카센터');
+    });
+
+    test('an answer with only reasoning is reported, not silently empty', () {
+      final provider = GeminiProvider(
+        client: clientReturning(
+          jsonEncode({
+            'candidates': [
+              {
+                'content': {
+                  'parts': [
+                    {'thoughtSignature': 'abc'},
+                  ],
+                },
+              },
+            ],
+          }),
+        ),
+      );
+
+      expect(
+        () => provider.analyzeReceipt(
+          image: receipt,
+          apiKey: 'k',
+          knownItems: const [],
+        ),
+        throwsA(isA<AiProviderException>()),
+      );
+    });
+  });
+
+  test('the default Gemini model is an alias, not a pinned version', () {
+    // 고정 모델은 은퇴하면 설치된 앱이 404 를 받는다.
+    expect(GeminiProvider.defaultModel, 'gemini-flash-latest');
+    expect(GeminiProvider.defaultModel, isNot(matches(r'\d+\.\d+')));
+  });
 }

@@ -80,6 +80,7 @@ class VehicleRepository {
   Future<int> create({
     required String displayName,
     required int currentMileage,
+    String? bodyStyle,
     String? manufacturer,
     String? model,
     int? modelYear,
@@ -95,6 +96,7 @@ class VehicleRepository {
             VehiclesCompanion.insert(
               displayName: displayName,
               currentMileage: currentMileage,
+              bodyStyle: Value(bodyStyle),
               mileageUpdatedAt: timestamp,
               manufacturer: Value(manufacturer),
               model: Value(model),
@@ -121,6 +123,7 @@ class VehicleRepository {
   Future<void> update({
     required int id,
     required String displayName,
+    String? bodyStyle,
     String? manufacturer,
     String? model,
     int? modelYear,
@@ -134,6 +137,7 @@ class VehicleRepository {
       )..where((v) => v.id.equals(id))).write(
         VehiclesCompanion(
           displayName: Value(displayName),
+          bodyStyle: Value(bodyStyle),
           manufacturer: Value(manufacturer),
           model: Value(model),
           modelYear: Value(modelYear),

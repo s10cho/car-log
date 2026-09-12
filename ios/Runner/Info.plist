@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>차계부</string>
+	<string>Car로그</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -24,8 +24,14 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>FLTEnableFlutterGPU</key>
+	<true/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>정비 영수증을 촬영해 기록에 첨부합니다.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>앨범에 있는 영수증 사진을 정비 기록에 첨부합니다.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -43,11 +49,7 @@
 					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
 					<key>UISceneStoryboardFile</key>
 					<string>Main</string>
-					<key>NSCameraUsageDescription</key>
-	<string>정비 영수증을 촬영해 기록에 첨부합니다.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>앨범에 있는 영수증 사진을 정비 기록에 첨부합니다.</string>
-</dict>
+				</dict>
 			</array>
 		</dict>
 	</dict>

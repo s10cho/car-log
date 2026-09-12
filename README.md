@@ -53,6 +53,17 @@ flutter test integration_test            # 시뮬레이터/기기 필요
 Firebase App Distribution으로 배포해 실기기에서 확인한다. 자세한 내용은
 [docs/decisions.md](docs/decisions.md) 참고.
 
+## 스크린샷
+
+UI 를 바꿨으면 눈으로 확인한다.
+
+```bash
+flutter drive --driver=test_driver/integration_test.dart \
+  --target=integration_test/screenshots_test.dart -d <device>
+```
+
+`build/screenshots/` 에 화면별 PNG 가 떨어진다.
+
 ## 비밀 관리
 
 저장소는 public이다. 서명 키, Firebase 서비스 계정, `.env` 같은 비밀 파일은
@@ -94,7 +105,9 @@ GitHub Actions 의 **Distribute Android** 워크플로로도 돌릴 수 있다. 
 
 ## 기능
 
-- 차량 여러 대 등록·전환·삭제
+- 차량 여러 대 등록·전환·삭제 (등록은 한 번에 하나씩 묻는 단계별 흐름)
+- 3D 차량 (Kenney Car Kit, CC0) 10종 중 선택, 홈 차고에 렌더
+- 관리 점수와 배지
 - 정비 기록 작성·수정·삭제, 영수증 첨부(카메라/앨범/파일)
 - 기본 정비 항목 10종 + 사용자 정의 항목, 항목별 교체주기(거리/기간/복합)
 - 다음 교체 시기 자동 계산과 로컬 알림

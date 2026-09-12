@@ -36,11 +36,12 @@ void main() {
     );
     await tester.enterText(find.widgetWithText(TextFormField, '정비소'), '동네카센터');
     await tester.tap(find.widgetWithText(FilledButton, '저장'));
-    await settle(tester);
+    await settleAnimations(tester);
 
     expect(find.byType(MaintenanceRecordFormPage), findsNothing);
-    expect(find.text('33,000 km · 80,000원 · 동네카센터'), findsOneWidget);
     expect(find.text('43,000 km'), findsOneWidget);
+    await scrollTo(tester, find.text('33,000 km · 80,000원 · 동네카센터'));
+    expect(find.text('33,000 km · 80,000원 · 동네카센터'), findsOneWidget);
   });
 
   testWidgets('a record moves the odometer forward', (tester) async {
@@ -51,7 +52,7 @@ void main() {
       '35000',
     );
     await tester.tap(find.widgetWithText(FilledButton, '저장'));
-    await settle(tester);
+    await settleAnimations(tester);
 
     expect(find.text('35,000 km'), findsWidgets);
   });

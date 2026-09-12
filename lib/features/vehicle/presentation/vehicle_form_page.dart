@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../garage/domain/car_body_style.dart';
+import '../../garage/presentation/car_scene.dart';
 import '../data/vehicle_repository.dart';
 
 /// Registers a new vehicle, or edits an existing one when [vehicleId] is given.
@@ -33,6 +35,9 @@ class _VehicleFormPageState extends ConsumerState<VehicleFormPage> {
   bool _loading = false;
   bool _saving = false;
 
+  /// Carried through the form so saving cannot quietly clear it.
+  CarBodyStyle _style = CarBodyStyle.fallback;
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +61,7 @@ class _VehicleFormPageState extends ConsumerState<VehicleFormPage> {
   }
 
   void _fill(Vehicle vehicle) {
+    _style = CarBodyStyle.fromId(vehicle.bodyStyle);
     _displayName.text = vehicle.displayName;
     _manufacturer.text = vehicle.manufacturer ?? '';
     _model.text = vehicle.model ?? '';
@@ -86,6 +92,7 @@ class _VehicleFormPageState extends ConsumerState<VehicleFormPage> {
         await repository.update(
           id: widget.vehicleId!,
           displayName: _displayName.text.trim(),
+          bodyStyle: _style.id,
           manufacturer: _nullIfBlank(_manufacturer.text),
           model: _nullIfBlank(_model.text),
           modelYear: int.tryParse(_modelYear.text.trim()),
@@ -95,6 +102,7 @@ class _VehicleFormPageState extends ConsumerState<VehicleFormPage> {
         final id = await repository.create(
           displayName: _displayName.text.trim(),
           currentMileage: int.parse(_mileage.text.trim()),
+          bodyStyle: _style.id,
           manufacturer: _nullIfBlank(_manufacturer.text),
           model: _nullIfBlank(_model.text),
           modelYear: int.tryParse(_modelYear.text.trim()),
@@ -134,6 +142,31 @@ class _VehicleFormPageState extends ConsumerState<VehicleFormPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
           children: [
+            if (widget.isEditing) ...[
+              SizedBox(
+                height: 150,
+                child: CarScene(style: _style, height: 150),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 44,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: CarBodyStyle.values.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final style = CarBodyStyle.values[index];
+                    return ChoiceChip(
+                      selected: style == _style,
+                      label: Text(style.label),
+                      avatar: Icon(style.icon, size: 18),
+                      onSelected: (_) => setState(() => _style = style),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
             TextFormField(
               controller: _displayName,
               autofocus: !widget.isEditing,
