@@ -54,5 +54,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   remove_alpha_ios: true
-  adaptive_icon_background: "#00629A"
-  adaptive_icon_foreground: assets/icon/app_icon.png
+  # Android's adaptive icon crops the outer third, so the foreground is the car
+  # alone, inset, over the brand colour taken from the source image.
+  adaptive_icon_background: "#01609E"
+  adaptive_icon_foreground: assets/icon/app_icon_foreground.png

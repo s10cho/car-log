@@ -110,7 +110,15 @@ void main() {
       find.widgetWithText(TextFormField, '정비 시 주행거리 (km)'),
       '33000',
     );
-    await tapAndAwaitIo(tester, find.widgetWithText(FilledButton, '저장'));
+    // 저장은 파일 복사를 거치므로, 홈에 상태 카드가 올라올 때까지 기다린다.
+    await tapAndAwaitIo(
+      tester,
+      find.widgetWithText(FilledButton, '저장'),
+      until: find.descendant(
+        of: find.byType(Card),
+        matching: find.text('엔진오일'),
+      ),
+    );
 
     // 홈 → 정비 상세 → 영수증. 상태 카드를 눌러야 한다.
     await tester.tap(

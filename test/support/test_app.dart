@@ -94,12 +94,30 @@ FakeReceiptPicker pickerOf(ProviderContainer container) =>
 /// A widget test holds a fake clock, so `dart:io` work started by a tap — such
 /// as copying a receipt into the app's storage — never completes unless the
 /// real event loop is allowed to run.
-Future<void> tapAndAwaitIo(WidgetTester tester, Finder finder) async {
+///
+/// [until] makes the wait a condition rather than a duration. A fixed delay
+/// that is comfortable on a developer's machine is not comfortable on a shared
+/// CI runner, which is how this test started failing only in CI.
+Future<void> tapAndAwaitIo(
+  WidgetTester tester,
+  Finder finder, {
+  Finder? until,
+}) async {
   await tester.runAsync(() async {
     await tester.tap(finder);
     await Future<void>.delayed(const Duration(milliseconds: 50));
   });
   await settle(tester);
+
+  if (until == null) {
+    return;
+  }
+  for (var attempt = 0; attempt < 60 && until.evaluate().isEmpty; attempt++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await settle(tester);
+  }
 }
 
 /// The stand-in AI provider behind [buildTestApp].
