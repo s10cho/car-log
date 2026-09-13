@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,24 @@ import 'car_paint.dart';
 import 'car_silhouette.dart';
 
 final _log = Logger('car_scene');
+
+/// Starts loading the 3D engine's shared resources, before any car needs them.
+///
+/// These load once per app run and the first [SceneView] would otherwise wait
+/// on them while the home screen is already on screen. Called from bootstrap
+/// and deliberately not awaited: the app must open at the same speed whether
+/// or not the device can render 3D at all.
+Future<void> warmUpCarScene() async {
+  try {
+    await Scene.initializeStaticResources();
+  } on Object catch (error, stackTrace) {
+    _log.warning(
+      '3D engine unavailable; cars will be drawn flat',
+      error,
+      stackTrace,
+    );
+  }
+}
 
 /// How the car is presented.
 enum CarPose {
@@ -49,13 +68,33 @@ class CarScene extends StatefulWidget {
 }
 
 class _CarSceneState extends State<CarScene> {
+  /// How long the stage stays empty before a drawn car is put there instead.
+  ///
+  /// On a warm engine the model is ready well inside this, and the user sees
+  /// the car arrive once. On a slow device an empty stage would look broken,
+  /// so the drawing stands in — and then cross-fades rather than snapping.
+  static const Duration _patience = Duration(milliseconds: 900);
+
   Scene? _scene;
   bool _failed = false;
+  bool _waitedLongEnough = false;
+  Timer? _patienceTimer;
 
   @override
   void initState() {
     super.initState();
+    _patienceTimer = Timer(_patience, () {
+      if (mounted && _scene == null) {
+        setState(() => _waitedLongEnough = true);
+      }
+    });
     _load();
+  }
+
+  @override
+  void dispose() {
+    _patienceTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -71,6 +110,12 @@ class _CarSceneState extends State<CarScene> {
     final color = widget.color;
     try {
       final node = await _CarModels.instance.load(style);
+      // Wait for the engine here rather than letting SceneView swap a
+      // placeholder in mid-flight. That placeholder is what the user saw as a
+      // flat car flicking over into a 3D one a beat after the app opened.
+      if (!Scene.isReadyToRender) {
+        await Scene.initializeStaticResources();
+      }
       if (!mounted || widget.style != style || widget.color != color) {
         return;
       }
@@ -192,23 +237,42 @@ class _CarSceneState extends State<CarScene> {
 
   @override
   Widget build(BuildContext context) {
-    if (_failed) {
+    // width must be given: under the loose constraints a Stack hands its
+    // non-positioned children, a height-only SizedBox collapses to zero width
+    // and the scene renders nothing at all.
+    return SizedBox(
+      width: double.infinity,
+      height: widget.height,
+      // Whatever replaces what is on screen fades in over it. The car is the
+      // one thing on this screen the user is looking at, and it should not
+      // appear by snapping into place.
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 450),
+        child: _stage(),
+      ),
+    );
+  }
+
+  Widget _stage() {
+    final scene = _scene;
+    if (_failed || (scene == null && _waitedLongEnough)) {
       return CarSilhouette(
+        key: const ValueKey('drawn'),
         style: widget.style,
         color: widget.color,
         height: widget.height,
       );
     }
-
-    final scene = _scene;
     if (scene == null) {
-      return SizedBox(width: double.infinity, height: widget.height);
+      return SizedBox(
+        key: const ValueKey('empty'),
+        width: double.infinity,
+        height: widget.height,
+      );
     }
 
-    // width must be given: under the loose constraints a Stack hands its
-    // non-positioned children, a height-only SizedBox collapses to zero width
-    // and the scene renders nothing at all.
     return SizedBox(
+      key: const ValueKey('scene'),
       width: double.infinity,
       height: widget.height,
       child: LayoutBuilder(
@@ -220,15 +284,11 @@ class _CarSceneState extends State<CarScene> {
           return SceneView(
             scene,
             cameraBuilder: (elapsed) => _camera(elapsed, aspect),
-            // The engine's shared shaders load once per app run. Gating on that
-            // and drawing the silhouette meanwhile beats dropping the first frames
-            // and having the car appear a beat late — and it is the same picture
-            // the fallback uses, so nothing jumps.
-            loadingBuilder: (context, progress) => CarSilhouette(
-              style: widget.style,
-              color: widget.color,
-              height: widget.height,
-            ),
+            // Nothing, rather than a stand-in: the engine is already ready by
+            // the time this builds, and anything drawn here would only ever be
+            // seen as a flicker.
+            loadingBuilder: (context, progress) =>
+                SizedBox(width: double.infinity, height: widget.height),
           );
         },
       ),

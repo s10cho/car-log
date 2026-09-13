@@ -39,9 +39,10 @@ class _VehicleWizardPageState extends ConsumerState<VehicleWizardPage> {
 
   _Step _step = _Step.bodyStyle;
   CarBodyStyle _style = CarBodyStyle.sedan;
-  // White, because that is what most cars on the road are — and because a
-  // step with nothing selected asks the user to do work the default can do.
-  CarPaintColor _color = CarPaintColor.white;
+  // The shape step shows the car before the colour is asked for, and a white
+  // car on a light background is a shape you have to squint at. Red reads at
+  // a glance in both themes — and the very next step is where it changes.
+  CarPaintColor _color = CarPaintColor.red;
   bool _saving = false;
   String? _error;
 

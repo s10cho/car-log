@@ -79,10 +79,10 @@ void main() {
 
     expect(find.text('무슨 색인가요?'), findsOneWidget);
     // 기본값이 이미 골라져 있어서 그냥 넘어갈 수 있다.
-    expect(find.text('화이트'), findsWidgets);
-
-    await chooseColor(tester, '레드');
     expect(find.text('레드'), findsWidgets);
+
+    await chooseColor(tester, '네이비');
+    expect(find.text('네이비'), findsWidgets);
   });
 
   testWidgets('reveals the next question only after answering', (tester) async {
@@ -111,14 +111,14 @@ void main() {
     await openWizard(tester, buildTestApp().app);
     await chooseStyle(tester, 'SUV');
     await next(tester);
-    await chooseColor(tester, '레드');
+    await chooseColor(tester, '네이비');
     await next(tester);
     await answerName(tester, '내 아반떼');
     await next(tester);
 
     // 답한 것이 사라지지 않는다.
     expect(find.text('SUV'), findsWidgets);
-    expect(find.text('레드'), findsWidgets);
+    expect(find.text('네이비'), findsWidgets);
     expect(find.text('내 아반떼'), findsWidgets);
     expect(find.text('지금 주행거리는요?'), findsOneWidget);
   });
@@ -170,7 +170,7 @@ void main() {
     await openWizard(tester, app);
     await chooseStyle(tester, 'SUV');
     await next(tester);
-    await chooseColor(tester, '레드');
+    await chooseColor(tester, '네이비');
     await next(tester);
     await answerName(tester, '내 아반떼');
     await next(tester);
@@ -185,7 +185,7 @@ void main() {
     expect(vehicles.single.displayName, '내 아반떼');
     expect(vehicles.single.currentMileage, 47250);
     expect(vehicles.single.bodyStyle, 'suv');
-    expect(vehicles.single.paintColor, 'red');
+    expect(vehicles.single.paintColor, 'navy');
 
     // 등록한 차가 바로 차고에 보인다.
     expect(find.text('내 아반떼'), findsWidgets);

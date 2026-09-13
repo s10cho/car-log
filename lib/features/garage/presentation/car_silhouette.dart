@@ -69,29 +69,29 @@ class _CarPainter extends CustomPainter {
       roofHeight: 0.26,
       length: 0.92,
     ),
-    CarBodyStyle.suv => (
+    CarBodyStyle.suv || CarBodyStyle.suvLuxury => (
       roofStart: 0.26,
       roofEnd: 0.74,
       roofHeight: 0.46,
       length: 0.88,
     ),
-    CarBodyStyle.van => (
+    CarBodyStyle.van || CarBodyStyle.delivery => (
       roofStart: 0.22,
       roofEnd: 0.84,
       roofHeight: 0.54,
       length: 0.94,
     ),
-    CarBodyStyle.supercar || CarBodyStyle.muscle => (
-      roofStart: 0.36,
-      roofEnd: 0.66,
-      roofHeight: 0.2,
+    CarBodyStyle.truck => (
+      roofStart: 0.22,
+      roofEnd: 0.5,
+      roofHeight: 0.5,
       length: 0.94,
     ),
-    CarBodyStyle.coupe || CarBodyStyle.retro => (
-      roofStart: 0.36,
-      roofEnd: 0.64,
-      roofHeight: 0.24,
-      length: 0.92,
+    CarBodyStyle.hatchback => (
+      roofStart: 0.28,
+      roofEnd: 0.78,
+      roofHeight: 0.4,
+      length: 0.86,
     ),
     _ => (roofStart: 0.3, roofEnd: 0.68, roofHeight: 0.34, length: 0.9),
   };

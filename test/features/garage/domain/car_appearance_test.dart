@@ -23,10 +23,9 @@ void main() {
   test('a body style that no longer has a model becomes the nearest one', () {
     // 기본값(세단)으로 떨어뜨리면 사용자가 고른 적 없는 차가 되므로,
     // 남아 있는 가장 가까운 모양으로 보낸다.
-    expect(CarBodyStyle.fromId('truck'), CarBodyStyle.van);
-    expect(CarBodyStyle.fromId('delivery'), CarBodyStyle.van);
-    expect(CarBodyStyle.fromId('suv-luxury'), CarBodyStyle.suv);
-    expect(CarBodyStyle.fromId('hatchback-sports'), CarBodyStyle.coupe);
+    expect(CarBodyStyle.fromId('supercar'), CarBodyStyle.sedanSports);
+    expect(CarBodyStyle.fromId('muscle'), CarBodyStyle.sedanSports);
+    expect(CarBodyStyle.fromId('luxury'), CarBodyStyle.sedan);
     // 택시와 경찰차는 개인 차계부에 있을 자리가 아니라 뺐다.
     expect(CarBodyStyle.fromId('taxi'), CarBodyStyle.sedan);
     expect(CarBodyStyle.fromId('police'), CarBodyStyle.sedan);
@@ -42,7 +41,7 @@ void main() {
 
     expect(ids, hasLength(CarBodyStyle.values.length));
     // 저장된 값이므로 이름을 바꾸면 사용자의 차가 바뀐다.
-    expect(ids, containsAll(['sedan', 'suv', 'van', 'coupe']));
+    expect(ids, containsAll(['sedan', 'suv', 'van', 'truck']));
   });
 
   test('a missing colour stays missing rather than becoming a default', () {
