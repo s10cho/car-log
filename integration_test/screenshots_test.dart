@@ -64,9 +64,9 @@ void main() {
     await settle(tester, frames: 80);
     await shoot(tester, '02-wizard-body-style');
 
-    await tester.tap(find.text('쿠페'));
+    await tester.tap(find.text('슈퍼카'));
     await settle(tester, frames: 80);
-    await shoot(tester, '03-wizard-coupe');
+    await shoot(tester, '03-wizard-supercar');
 
     await tester.tap(find.widgetWithText(FilledButton, '다음'));
     await settle(tester, frames: 60);

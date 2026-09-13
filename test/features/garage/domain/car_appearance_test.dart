@@ -21,12 +21,15 @@ void main() {
   });
 
   test('a body style that no longer has a model becomes the nearest one', () {
-    // 밴·트럭·대형 SUV 는 새 모델 세트에 없다. 세단으로 떨어뜨리면 사용자가
-    // 고른 적 없는 차가 되므로, 남아 있는 가장 가까운 모양으로 보낸다.
-    expect(CarBodyStyle.fromId('van'), CarBodyStyle.suv);
-    expect(CarBodyStyle.fromId('truck'), CarBodyStyle.suv);
-    expect(CarBodyStyle.fromId('delivery'), CarBodyStyle.suv);
+    // 기본값(세단)으로 떨어뜨리면 사용자가 고른 적 없는 차가 되므로,
+    // 남아 있는 가장 가까운 모양으로 보낸다.
+    expect(CarBodyStyle.fromId('truck'), CarBodyStyle.van);
+    expect(CarBodyStyle.fromId('delivery'), CarBodyStyle.van);
     expect(CarBodyStyle.fromId('suv-luxury'), CarBodyStyle.suv);
+    expect(CarBodyStyle.fromId('hatchback-sports'), CarBodyStyle.coupe);
+    // 택시와 경찰차는 개인 차계부에 있을 자리가 아니라 뺐다.
+    expect(CarBodyStyle.fromId('taxi'), CarBodyStyle.sedan);
+    expect(CarBodyStyle.fromId('police'), CarBodyStyle.sedan);
   });
 
   test('an unknown body style falls back to the default', () {
@@ -39,7 +42,7 @@ void main() {
 
     expect(ids, hasLength(CarBodyStyle.values.length));
     // 저장된 값이므로 이름을 바꾸면 사용자의 차가 바뀐다.
-    expect(ids, containsAll(['sedan', 'suv', 'taxi', 'police']));
+    expect(ids, containsAll(['sedan', 'suv', 'van', 'coupe']));
   });
 
   test('a missing colour stays missing rather than becoming a default', () {

@@ -79,12 +79,8 @@ class _CarSceneState extends State<CarScene> {
       // The runtime glTF importer puts a handedness flip on the root it
       // synthesises. Anything this app wants to do to the car — placing it,
       // turning it — goes on a parent, never on that root.
-      //
-      // Turned to face the camera: the models are authored nose-down-Z, and
-      // left alone every screen would show the user the back of their car.
-      final car = Node(name: 'car')
-        ..add(node)
-        ..rotation = vm.Quaternion.axisAngle(vm.Vector3(0, 1, 0), math.pi);
+      final car = Node(name: 'car')..add(node);
+      _fit(car);
 
       final scene = Scene()
         ..add(car)
@@ -114,6 +110,41 @@ class _CarSceneState extends State<CarScene> {
         setState(() => _failed = true);
       }
     }
+  }
+
+  /// Sizes and places an imported car so every model arrives the same.
+  ///
+  /// The models come from different authors and are authored in whatever units
+  /// suited them — one car is four units long, another four hundred, a third
+  /// four hundredths. Rather than carry a magic scale per model, the car is
+  /// measured once on load and scaled to a real car's length, centred, and set
+  /// down on the ground, facing the camera.
+  void _fit(Node car) {
+    final bounds = car.combinedLocalBounds;
+    if (bounds == null) {
+      return;
+    }
+    final size = bounds.max - bounds.min;
+    final length = math.max(size.x, size.z);
+    if (length <= 0) {
+      return;
+    }
+
+    final scale = _targetLength / length;
+    // Half a turn. glTF points a vehicle down -Z and the runtime importer's
+    // handedness flip turns that into +Z — straight at the camera's back. Left
+    // alone, every screen shows the user the boot of their car.
+    final rotation = vm.Matrix4.rotationY(math.pi);
+    final centre = (bounds.min + bounds.max) * 0.5 * scale;
+    final placed = rotation.transformed3(vm.Vector3(centre.x, 0, centre.z));
+
+    final transform =
+        vm.Matrix4.translation(
+          vm.Vector3(-placed.x, -bounds.min.y * scale, -placed.z),
+        ) *
+        rotation *
+        vm.Matrix4.diagonal3Values(scale, scale, scale);
+    car.localTransform = transform as vm.Matrix4;
   }
 
   /// An invisible disc under the car that collects its shadow.
@@ -238,6 +269,9 @@ class _CarSceneState extends State<CarScene> {
 
 const double _fov = 32 * math.pi / 180;
 
+/// Every car is scaled to this length in metres, whatever it was authored at.
+const double _targetLength = 4.3;
+
 /// How far back the camera has to sit for the whole car to fit.
 ///
 /// The viewport's shape decides this, not the pose. The same car has to fit a
@@ -245,9 +279,10 @@ const double _fov = 32 * math.pi / 180;
 /// the bumpers off in the tall one or leaves a toy in the middle of the wide
 /// one — which is exactly what both looked like before this was measured.
 double _distanceFor(double aspect) {
-  // The longest model, at the three-quarter angle it is shown from.
-  const carLength = 4.4;
-  const carHeight = 1.7;
+  // Every model is scaled to the same length; the tallest of them (the van)
+  // is what the height has to clear.
+  const carLength = _targetLength;
+  const carHeight = 2.0;
   const margin = 1.2;
 
   final halfExtent = math.tan(_fov / 2);
