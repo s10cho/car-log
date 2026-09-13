@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../garage/domain/car_body_style.dart';
+import '../../garage/domain/car_paint_color.dart';
+import '../../garage/presentation/car_color_picker.dart';
 import '../../garage/presentation/car_scene.dart';
 import '../data/vehicle_repository.dart';
 
@@ -35,8 +37,9 @@ class _VehicleFormPageState extends ConsumerState<VehicleFormPage> {
   bool _loading = false;
   bool _saving = false;
 
-  /// Carried through the form so saving cannot quietly clear it.
+  /// Carried through the form so saving cannot quietly clear them.
   CarBodyStyle _style = CarBodyStyle.fallback;
+  CarPaintColor? _color;
 
   @override
   void initState() {
@@ -62,6 +65,7 @@ class _VehicleFormPageState extends ConsumerState<VehicleFormPage> {
 
   void _fill(Vehicle vehicle) {
     _style = CarBodyStyle.fromId(vehicle.bodyStyle);
+    _color = CarPaintColor.fromId(vehicle.paintColor);
     _displayName.text = vehicle.displayName;
     _manufacturer.text = vehicle.manufacturer ?? '';
     _model.text = vehicle.model ?? '';
@@ -93,6 +97,7 @@ class _VehicleFormPageState extends ConsumerState<VehicleFormPage> {
           id: widget.vehicleId!,
           displayName: _displayName.text.trim(),
           bodyStyle: _style.id,
+          paintColor: _color?.id,
           manufacturer: _nullIfBlank(_manufacturer.text),
           model: _nullIfBlank(_model.text),
           modelYear: int.tryParse(_modelYear.text.trim()),
@@ -103,6 +108,7 @@ class _VehicleFormPageState extends ConsumerState<VehicleFormPage> {
           displayName: _displayName.text.trim(),
           currentMileage: int.parse(_mileage.text.trim()),
           bodyStyle: _style.id,
+          paintColor: _color?.id,
           manufacturer: _nullIfBlank(_manufacturer.text),
           model: _nullIfBlank(_model.text),
           modelYear: int.tryParse(_modelYear.text.trim()),
@@ -145,7 +151,7 @@ class _VehicleFormPageState extends ConsumerState<VehicleFormPage> {
             if (widget.isEditing) ...[
               SizedBox(
                 height: 150,
-                child: CarScene(style: _style, height: 150),
+                child: CarScene(style: _style, color: _color, height: 150),
               ),
               const SizedBox(height: 8),
               SizedBox(
@@ -164,6 +170,11 @@ class _VehicleFormPageState extends ConsumerState<VehicleFormPage> {
                     );
                   },
                 ),
+              ),
+              const SizedBox(height: 12),
+              CarColorPicker(
+                selected: _color,
+                onSelected: (color) => setState(() => _color = color),
               ),
               const SizedBox(height: 20),
             ],

@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/formatting/app_formats.dart';
 import '../../garage/domain/car_body_style.dart';
+import '../../garage/domain/car_paint_color.dart';
+import '../../garage/presentation/car_color_picker.dart';
 import '../../garage/presentation/car_scene.dart';
 import '../../garage/presentation/celebration.dart';
 import '../../garage/presentation/wizard_step_scaffold.dart';
@@ -25,7 +27,7 @@ class VehicleWizardPage extends ConsumerStatefulWidget {
   ConsumerState<VehicleWizardPage> createState() => _VehicleWizardPageState();
 }
 
-enum _Step { bodyStyle, name, mileage, details }
+enum _Step { bodyStyle, paint, name, mileage, details }
 
 class _VehicleWizardPageState extends ConsumerState<VehicleWizardPage> {
   final _name = TextEditingController();
@@ -37,6 +39,9 @@ class _VehicleWizardPageState extends ConsumerState<VehicleWizardPage> {
 
   _Step _step = _Step.bodyStyle;
   CarBodyStyle _style = CarBodyStyle.sedan;
+  // White, because that is what most cars on the road are — and because a
+  // step with nothing selected asks the user to do work the default can do.
+  CarPaintColor _color = CarPaintColor.white;
   bool _saving = false;
   String? _error;
 
@@ -67,8 +72,9 @@ class _VehicleWizardPageState extends ConsumerState<VehicleWizardPage> {
   /// question disappears.
   List<String> get _answered => [
     if (_stepIndex > 0) _style.label,
-    if (_stepIndex > 1 && _name.text.trim().isNotEmpty) _name.text.trim(),
-    if (_stepIndex > 2 && _parsedMileage != null)
+    if (_stepIndex > 1) _color.label,
+    if (_stepIndex > 2 && _name.text.trim().isNotEmpty) _name.text.trim(),
+    if (_stepIndex > 3 && _parsedMileage != null)
       formatKilometres(_parsedMileage!),
   ];
 
@@ -107,6 +113,7 @@ class _VehicleWizardPageState extends ConsumerState<VehicleWizardPage> {
         displayName: _name.text.trim(),
         currentMileage: mileage,
         bodyStyle: _style.id,
+        paintColor: _color.id,
         manufacturer: _nullIfBlank(_manufacturer.text),
         model: _nullIfBlank(_model.text),
         modelYear: int.tryParse(_modelYear.text.trim()),
@@ -145,6 +152,7 @@ class _VehicleWizardPageState extends ConsumerState<VehicleWizardPage> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
           child: switch (_step) {
             _Step.bodyStyle => _bodyStyleStep(),
+            _Step.paint => _paintStep(),
             _Step.name => _nameStep(),
             _Step.mileage => _mileageStep(),
             _Step.details => _detailsStep(),
@@ -191,12 +199,46 @@ class _VehicleWizardPageState extends ConsumerState<VehicleWizardPage> {
             ),
           ),
           const SizedBox(height: 16),
+          _NextButton(label: '다음', onPressed: () => _advance(_Step.paint)),
+        ],
+      ),
+      child: CarScene(
+        style: _style,
+        color: _color,
+        pose: CarPose.showcase,
+        height: double.infinity,
+      ),
+    );
+  }
+
+  Widget _paintStep() {
+    return WizardStepScaffold(
+      title: '무슨 색인가요?',
+      subtitle: '차고에 세워 둘 색입니다. 나중에 바꿀 수 있습니다.',
+      stepIndex: 1,
+      stepCount: _Step.values.length,
+      answered: _answered,
+      // Same reason as the shape step: the picker sits with the button so a
+      // short screen cannot slide it underneath.
+      footer: Column(
+        children: [
+          Text(
+            _color.label,
+            style: Theme.of(context).textTheme.titleLarge,
+          ).animate(key: ValueKey(_color)).fadeIn(duration: 200.ms),
+          const SizedBox(height: 10),
+          CarColorPicker(
+            selected: _color,
+            onSelected: (color) => setState(() => _color = color),
+          ),
+          const SizedBox(height: 16),
           _NextButton(label: '다음', onPressed: () => _advance(_Step.name)),
         ],
       ),
       child: CarScene(
         style: _style,
-        pose: CarPose.showcase,
+        color: _color,
+        pose: CarPose.parked,
         height: double.infinity,
       ),
     );
@@ -207,7 +249,7 @@ class _VehicleWizardPageState extends ConsumerState<VehicleWizardPage> {
     return WizardStepScaffold(
       title: '이 차를 뭐라고 부를까요?',
       subtitle: '차고에서 이 이름으로 보입니다.',
-      stepIndex: 1,
+      stepIndex: 2,
       stepCount: _Step.values.length,
       answered: _answered,
       footer: _NextButton(
@@ -237,7 +279,7 @@ class _VehicleWizardPageState extends ConsumerState<VehicleWizardPage> {
     return WizardStepScaffold(
       title: '지금 주행거리는요?',
       subtitle: '계기판에 보이는 숫자를 그대로 적어 주세요. 다음 교체 시기를 계산하는 기준입니다.',
-      stepIndex: 2,
+      stepIndex: 3,
       stepCount: _Step.values.length,
       answered: _answered,
       footer: _NextButton(
@@ -281,7 +323,7 @@ class _VehicleWizardPageState extends ConsumerState<VehicleWizardPage> {
     return WizardStepScaffold(
       title: '거의 끝났어요',
       subtitle: '아래는 모두 선택 사항입니다. 비워 두고 바로 시작해도 됩니다.',
-      stepIndex: 3,
+      stepIndex: 4,
       stepCount: _Step.values.length,
       answered: _answered,
       footer: Column(

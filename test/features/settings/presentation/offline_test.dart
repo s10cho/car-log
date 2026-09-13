@@ -17,8 +17,10 @@ void main() {
     await tester.pumpWidget(app);
     await settle(tester);
 
-    // 차량 등록 (위저드: 차종 → 이름 → 주행거리 → 완료)
+    // 차량 등록 (위저드: 차종 → 색 → 이름 → 주행거리 → 완료)
     await tester.tap(find.widgetWithText(FilledButton, '차량 등록'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '다음'));
     await settle(tester);
     await tester.tap(find.widgetWithText(FilledButton, '다음'));
     await settle(tester);

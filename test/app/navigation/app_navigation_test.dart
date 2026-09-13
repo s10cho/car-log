@@ -23,7 +23,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.settings_outlined));
     await settle(tester);
-    expect(find.text('환경'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, '알림'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.home_outlined));
     await settle(tester);
@@ -36,6 +36,8 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.settings_outlined));
     await settle(tester);
+    // 환경은 설정 목록 맨 아래에 있다.
+    await scrollTo(tester, find.text('환경'));
 
     expect(find.text('dev'), findsOneWidget);
   });

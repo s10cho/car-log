@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../domain/care_score.dart';
 import '../domain/car_body_style.dart';
+import '../domain/car_paint_color.dart';
 import 'car_scene.dart';
 import 'care_score_ring.dart';
 
@@ -14,11 +15,13 @@ class GarageStage extends StatelessWidget {
   const GarageStage({
     required this.style,
     required this.score,
+    this.color,
     this.height = 190,
     super.key,
   });
 
   final CarBodyStyle style;
+  final CarPaintColor? color;
   final CareScore score;
   final double height;
 
@@ -42,40 +45,23 @@ class GarageStage extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [accent.withValues(alpha: 0.22), scheme.surface],
+          colors: [accent.withValues(alpha: 0.16), scheme.surface],
         ),
       ),
       child: Stack(
         children: [
-          // The ground the car stands on, so it reads as a place.
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: height * 0.3,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(28),
-                ),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    scheme.surfaceContainerHighest.withValues(alpha: 0),
-                    scheme.surfaceContainerHighest,
-                  ],
-                ),
-              ),
-            ),
-          ),
           // The car keeps to the left so it can never collide with the
           // score ring, and is centred within that space rather than the card.
           Align(
             alignment: Alignment.bottomLeft,
             child: FractionallySizedBox(
               widthFactor: 0.72,
-              child: CarScene(style: style, pose: pose, height: height - 12),
+              child: CarScene(
+                style: style,
+                color: color,
+                pose: pose,
+                height: height - 12,
+              ),
             ),
           ),
           // The score rides on the stage rather than below it, so the first

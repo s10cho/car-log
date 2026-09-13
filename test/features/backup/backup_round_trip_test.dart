@@ -32,6 +32,8 @@ void main() {
       model: '아반떼 CN7',
       modelYear: 2021,
       licensePlate: '12가3456',
+      bodyStyle: 'suv',
+      paintColor: 'red',
       now: DateTime(2026, 1, 1),
     );
     final carnival = await vehicles.create(
@@ -95,6 +97,9 @@ void main() {
       expect(avante.model, '아반떼 CN7');
       expect(avante.modelYear, 2021);
       expect(avante.licensePlate, '12가3456');
+      // 차의 생김새도 백업에 들어간다. 복원한 차고가 낯설어 보이면 안 된다.
+      expect(avante.bodyStyle, 'suv');
+      expect(avante.paintColor, 'red');
       expect(avante.currentMileage, 41000);
     });
 

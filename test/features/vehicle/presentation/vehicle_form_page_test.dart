@@ -16,6 +16,7 @@ void main() {
           displayName: '아반떼',
           currentMileage: 32000,
           bodyStyle: 'sedan',
+          paintColor: 'blue',
           manufacturer: '현대',
         );
 
@@ -109,5 +110,29 @@ void main() {
     await settle(tester);
 
     expect((await readVehicles(container)).single.bodyStyle, 'sedan');
+  });
+
+  testWidgets('the paint colour survives an edit', (tester) async {
+    final container = await openEditForm(tester);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, '차량 이름').first,
+      '이름만 바꿈',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, '저장'));
+    await settle(tester);
+
+    expect((await readVehicles(container)).single.paintColor, 'blue');
+  });
+
+  testWidgets('repainting the car is saved', (tester) async {
+    final container = await openEditForm(tester);
+
+    await tester.tap(find.bySemanticsLabel('레드').first);
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '저장'));
+    await settle(tester);
+
+    expect((await readVehicles(container)).single.paintColor, 'red');
   });
 }

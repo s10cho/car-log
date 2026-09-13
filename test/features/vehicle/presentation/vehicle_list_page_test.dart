@@ -101,7 +101,9 @@ void main() {
 
     await tester.tap(find.widgetWithText(OutlinedButton, '차량 추가'));
     await settle(tester);
-    // 위저드: 차종 → 이름 → 주행거리 → 완료
+    // 위저드: 차종 → 색 → 이름 → 주행거리 → 완료
+    await tester.tap(find.widgetWithText(FilledButton, '다음'));
+    await settle(tester);
     await tester.tap(find.widgetWithText(FilledButton, '다음'));
     await settle(tester);
     await tester.enterText(find.byType(TextField).first, '트럭');

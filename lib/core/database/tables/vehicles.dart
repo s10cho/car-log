@@ -21,6 +21,10 @@ class Vehicles extends Table {
   /// before body styles existed; the UI falls back to a sedan.
   TextColumn get bodyStyle => text().nullable()();
 
+  /// What colour that shape is painted. Null for vehicles registered before
+  /// colours existed; those keep the colour their model was authored in.
+  TextColumn get paintColor => text().nullable()();
+
   /// Odometer reading in kilometres, and when the user last confirmed it.
   IntColumn get currentMileage => integer()();
   DateTimeColumn get mileageUpdatedAt => dateTime()();

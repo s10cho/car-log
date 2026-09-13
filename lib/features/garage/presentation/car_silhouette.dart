@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../domain/car_body_style.dart';
+import '../domain/car_paint_color.dart';
 
 /// A drawn car, used where the 3D model cannot be.
 ///
@@ -8,9 +9,19 @@ import '../domain/car_body_style.dart';
 /// should still look finished. The shape follows the chosen body style so the
 /// user's car remains recognisably theirs.
 class CarSilhouette extends StatelessWidget {
-  const CarSilhouette({required this.style, this.height = 200, super.key});
+  const CarSilhouette({
+    required this.style,
+    this.color,
+    this.height = 200,
+    super.key,
+  });
 
   final CarBodyStyle style;
+
+  /// The paint the 3D car would have worn. Null falls back to the theme,
+  /// which is what a vehicle registered before colours existed gets.
+  final CarPaintColor? color;
+
   final double height;
 
   @override
@@ -24,7 +35,7 @@ class CarSilhouette extends StatelessWidget {
       child: CustomPaint(
         painter: _CarPainter(
           style: style,
-          body: scheme.primary,
+          body: color?.color ?? scheme.primary,
           glass: scheme.surfaceContainerHighest,
           tyre: scheme.onSurfaceVariant,
           ground: scheme.shadow.withValues(alpha: 0.12),
@@ -58,23 +69,23 @@ class _CarPainter extends CustomPainter {
       roofHeight: 0.26,
       length: 0.92,
     ),
-    CarBodyStyle.suv || CarBodyStyle.suvLuxury => (
+    CarBodyStyle.suv => (
       roofStart: 0.26,
       roofEnd: 0.74,
       roofHeight: 0.46,
       length: 0.88,
     ),
-    CarBodyStyle.van || CarBodyStyle.delivery => (
-      roofStart: 0.22,
-      roofEnd: 0.84,
-      roofHeight: 0.54,
-      length: 0.94,
+    CarBodyStyle.hatchback => (
+      roofStart: 0.28,
+      roofEnd: 0.78,
+      roofHeight: 0.4,
+      length: 0.86,
     ),
-    CarBodyStyle.truck => (
-      roofStart: 0.22,
-      roofEnd: 0.5,
-      roofHeight: 0.5,
-      length: 0.94,
+    CarBodyStyle.coupe || CarBodyStyle.retro => (
+      roofStart: 0.36,
+      roofEnd: 0.64,
+      roofHeight: 0.24,
+      length: 0.92,
     ),
     _ => (roofStart: 0.3, roofEnd: 0.68, roofHeight: 0.34, length: 0.9),
   };

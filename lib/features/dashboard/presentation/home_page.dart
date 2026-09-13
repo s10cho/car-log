@@ -12,6 +12,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/formatting/app_formats.dart';
 import '../../garage/data/garage_providers.dart';
 import '../../garage/domain/car_body_style.dart';
+import '../../garage/domain/car_paint_color.dart';
 import '../../garage/domain/care_score.dart';
 import '../../garage/presentation/garage_stage.dart';
 import '../../garage/presentation/milestone_strip.dart';
@@ -190,6 +191,7 @@ class _VehicleHome extends ConsumerWidget {
       children: [
         GarageStage(
           style: CarBodyStyle.fromId(vehicle.bodyStyle),
+          color: CarPaintColor.fromId(vehicle.paintColor),
           score: score,
         ),
         const SizedBox(height: 8),

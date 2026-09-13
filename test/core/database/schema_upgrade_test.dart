@@ -226,7 +226,7 @@ void main() {
     test('adds the columns later versions introduced', () async {
       final database = open(writeV2Database());
 
-      // Both would throw "no such column" if the ALTER steps were skipped.
+      // Each would throw "no such column" if an ALTER step was skipped.
       await database
           .customSelect(
             'SELECT notification_enabled FROM vehicle_maintenance_settings',
@@ -235,6 +235,18 @@ void main() {
       await database
           .customSelect('SELECT receipt_asset_id FROM maintenance_records')
           .get();
+      await database
+          .customSelect('SELECT body_style, paint_color FROM vehicles')
+          .get();
+    });
+
+    test('a car registered before colours keeps none', () async {
+      final database = open(writeV2Database());
+
+      final vehicle = (await database.select(database.vehicles).get()).single;
+
+      expect(vehicle.bodyStyle, isNull);
+      expect(vehicle.paintColor, isNull);
     });
 
     test('the record still has no receipt attached', () async {

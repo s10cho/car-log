@@ -64,9 +64,17 @@ void main() {
     await settle(tester, frames: 80);
     await shoot(tester, '02-wizard-body-style');
 
-    await tester.tap(find.text('SUV'));
+    await tester.tap(find.text('쿠페'));
     await settle(tester, frames: 80);
-    await shoot(tester, '03-wizard-suv');
+    await shoot(tester, '03-wizard-coupe');
+
+    await tester.tap(find.widgetWithText(FilledButton, '다음'));
+    await settle(tester, frames: 60);
+    await shoot(tester, '03b-wizard-paint');
+
+    await tester.tap(find.bySemanticsLabel('레드').first);
+    await settle(tester, frames: 80);
+    await shoot(tester, '03c-wizard-paint-red');
 
     await tester.tap(find.widgetWithText(FilledButton, '다음'));
     await settle(tester);
@@ -100,6 +108,7 @@ void main() {
       displayName: '내 아반떼',
       currentMileage: 47250,
       bodyStyle: 'sedan',
+      paintColor: 'navy',
       manufacturer: '현대',
       model: '아반떼 CN7',
       modelYear: 2021,
@@ -142,6 +151,17 @@ void main() {
     await tester.tap(find.byIcon(Icons.settings_outlined));
     await settle(tester);
     await shoot(tester, '12-settings');
+
+    // 다크 테마로 바꾼 뒤 같은 화면들을 다시 찍는다.
+    await tester.tap(find.widgetWithText(ListTile, '화면 테마'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(ListTile, '다크'));
+    await settle(tester, frames: 60);
+    await shoot(tester, '13-settings-dark');
+
+    await tester.tap(find.byIcon(Icons.home_outlined));
+    await settle(tester, frames: 100);
+    await shoot(tester, '14-home-dark');
 
     await wipe(scope);
   });

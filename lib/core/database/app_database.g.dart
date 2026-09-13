@@ -360,6 +360,17 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _paintColorMeta = const VerificationMeta(
+    'paintColor',
+  );
+  @override
+  late final GeneratedColumn<String> paintColor = GeneratedColumn<String>(
+    'paint_color',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _currentMileageMeta = const VerificationMeta(
     'currentMileage',
   );
@@ -415,6 +426,7 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
     vin,
     licensePlate,
     bodyStyle,
+    paintColor,
     currentMileage,
     mileageUpdatedAt,
     createdAt,
@@ -486,6 +498,12 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
       context.handle(
         _bodyStyleMeta,
         bodyStyle.isAcceptableOrUnknown(data['body_style']!, _bodyStyleMeta),
+      );
+    }
+    if (data.containsKey('paint_color')) {
+      context.handle(
+        _paintColorMeta,
+        paintColor.isAcceptableOrUnknown(data['paint_color']!, _paintColorMeta),
       );
     }
     if (data.containsKey('current_mileage')) {
@@ -567,6 +585,10 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
         DriftSqlType.string,
         data['${effectivePrefix}body_style'],
       ),
+      paintColor: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}paint_color'],
+      ),
       currentMileage: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}current_mileage'],
@@ -610,6 +632,10 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
   /// before body styles existed; the UI falls back to a sedan.
   final String? bodyStyle;
 
+  /// What colour that shape is painted. Null for vehicles registered before
+  /// colours existed; those keep the colour their model was authored in.
+  final String? paintColor;
+
   /// Odometer reading in kilometres, and when the user last confirmed it.
   final int currentMileage;
   final DateTime mileageUpdatedAt;
@@ -624,6 +650,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     this.vin,
     this.licensePlate,
     this.bodyStyle,
+    this.paintColor,
     required this.currentMileage,
     required this.mileageUpdatedAt,
     required this.createdAt,
@@ -652,6 +679,9 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     if (!nullToAbsent || bodyStyle != null) {
       map['body_style'] = Variable<String>(bodyStyle);
     }
+    if (!nullToAbsent || paintColor != null) {
+      map['paint_color'] = Variable<String>(paintColor);
+    }
     map['current_mileage'] = Variable<int>(currentMileage);
     map['mileage_updated_at'] = Variable<DateTime>(mileageUpdatedAt);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -679,6 +709,9 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       bodyStyle: bodyStyle == null && nullToAbsent
           ? const Value.absent()
           : Value(bodyStyle),
+      paintColor: paintColor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paintColor),
       currentMileage: Value(currentMileage),
       mileageUpdatedAt: Value(mileageUpdatedAt),
       createdAt: Value(createdAt),
@@ -700,6 +733,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       vin: serializer.fromJson<String?>(json['vin']),
       licensePlate: serializer.fromJson<String?>(json['licensePlate']),
       bodyStyle: serializer.fromJson<String?>(json['bodyStyle']),
+      paintColor: serializer.fromJson<String?>(json['paintColor']),
       currentMileage: serializer.fromJson<int>(json['currentMileage']),
       mileageUpdatedAt: serializer.fromJson<DateTime>(json['mileageUpdatedAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -718,6 +752,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       'vin': serializer.toJson<String?>(vin),
       'licensePlate': serializer.toJson<String?>(licensePlate),
       'bodyStyle': serializer.toJson<String?>(bodyStyle),
+      'paintColor': serializer.toJson<String?>(paintColor),
       'currentMileage': serializer.toJson<int>(currentMileage),
       'mileageUpdatedAt': serializer.toJson<DateTime>(mileageUpdatedAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -734,6 +769,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     Value<String?> vin = const Value.absent(),
     Value<String?> licensePlate = const Value.absent(),
     Value<String?> bodyStyle = const Value.absent(),
+    Value<String?> paintColor = const Value.absent(),
     int? currentMileage,
     DateTime? mileageUpdatedAt,
     DateTime? createdAt,
@@ -747,6 +783,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     vin: vin.present ? vin.value : this.vin,
     licensePlate: licensePlate.present ? licensePlate.value : this.licensePlate,
     bodyStyle: bodyStyle.present ? bodyStyle.value : this.bodyStyle,
+    paintColor: paintColor.present ? paintColor.value : this.paintColor,
     currentMileage: currentMileage ?? this.currentMileage,
     mileageUpdatedAt: mileageUpdatedAt ?? this.mileageUpdatedAt,
     createdAt: createdAt ?? this.createdAt,
@@ -768,6 +805,9 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
           ? data.licensePlate.value
           : this.licensePlate,
       bodyStyle: data.bodyStyle.present ? data.bodyStyle.value : this.bodyStyle,
+      paintColor: data.paintColor.present
+          ? data.paintColor.value
+          : this.paintColor,
       currentMileage: data.currentMileage.present
           ? data.currentMileage.value
           : this.currentMileage,
@@ -790,6 +830,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
           ..write('vin: $vin, ')
           ..write('licensePlate: $licensePlate, ')
           ..write('bodyStyle: $bodyStyle, ')
+          ..write('paintColor: $paintColor, ')
           ..write('currentMileage: $currentMileage, ')
           ..write('mileageUpdatedAt: $mileageUpdatedAt, ')
           ..write('createdAt: $createdAt, ')
@@ -808,6 +849,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     vin,
     licensePlate,
     bodyStyle,
+    paintColor,
     currentMileage,
     mileageUpdatedAt,
     createdAt,
@@ -825,6 +867,7 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
           other.vin == this.vin &&
           other.licensePlate == this.licensePlate &&
           other.bodyStyle == this.bodyStyle &&
+          other.paintColor == this.paintColor &&
           other.currentMileage == this.currentMileage &&
           other.mileageUpdatedAt == this.mileageUpdatedAt &&
           other.createdAt == this.createdAt &&
@@ -840,6 +883,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
   final Value<String?> vin;
   final Value<String?> licensePlate;
   final Value<String?> bodyStyle;
+  final Value<String?> paintColor;
   final Value<int> currentMileage;
   final Value<DateTime> mileageUpdatedAt;
   final Value<DateTime> createdAt;
@@ -853,6 +897,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     this.vin = const Value.absent(),
     this.licensePlate = const Value.absent(),
     this.bodyStyle = const Value.absent(),
+    this.paintColor = const Value.absent(),
     this.currentMileage = const Value.absent(),
     this.mileageUpdatedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -867,6 +912,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     this.vin = const Value.absent(),
     this.licensePlate = const Value.absent(),
     this.bodyStyle = const Value.absent(),
+    this.paintColor = const Value.absent(),
     required int currentMileage,
     required DateTime mileageUpdatedAt,
     required DateTime createdAt,
@@ -885,6 +931,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     Expression<String>? vin,
     Expression<String>? licensePlate,
     Expression<String>? bodyStyle,
+    Expression<String>? paintColor,
     Expression<int>? currentMileage,
     Expression<DateTime>? mileageUpdatedAt,
     Expression<DateTime>? createdAt,
@@ -899,6 +946,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
       if (vin != null) 'vin': vin,
       if (licensePlate != null) 'license_plate': licensePlate,
       if (bodyStyle != null) 'body_style': bodyStyle,
+      if (paintColor != null) 'paint_color': paintColor,
       if (currentMileage != null) 'current_mileage': currentMileage,
       if (mileageUpdatedAt != null) 'mileage_updated_at': mileageUpdatedAt,
       if (createdAt != null) 'created_at': createdAt,
@@ -915,6 +963,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     Value<String?>? vin,
     Value<String?>? licensePlate,
     Value<String?>? bodyStyle,
+    Value<String?>? paintColor,
     Value<int>? currentMileage,
     Value<DateTime>? mileageUpdatedAt,
     Value<DateTime>? createdAt,
@@ -929,6 +978,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
       vin: vin ?? this.vin,
       licensePlate: licensePlate ?? this.licensePlate,
       bodyStyle: bodyStyle ?? this.bodyStyle,
+      paintColor: paintColor ?? this.paintColor,
       currentMileage: currentMileage ?? this.currentMileage,
       mileageUpdatedAt: mileageUpdatedAt ?? this.mileageUpdatedAt,
       createdAt: createdAt ?? this.createdAt,
@@ -963,6 +1013,9 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     if (bodyStyle.present) {
       map['body_style'] = Variable<String>(bodyStyle.value);
     }
+    if (paintColor.present) {
+      map['paint_color'] = Variable<String>(paintColor.value);
+    }
     if (currentMileage.present) {
       map['current_mileage'] = Variable<int>(currentMileage.value);
     }
@@ -989,6 +1042,7 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
           ..write('vin: $vin, ')
           ..write('licensePlate: $licensePlate, ')
           ..write('bodyStyle: $bodyStyle, ')
+          ..write('paintColor: $paintColor, ')
           ..write('currentMileage: $currentMileage, ')
           ..write('mileageUpdatedAt: $mileageUpdatedAt, ')
           ..write('createdAt: $createdAt, ')
@@ -3148,6 +3202,7 @@ typedef $$VehiclesTableCreateCompanionBuilder = VehiclesCompanion Function({
   Value<String?> vin,
   Value<String?> licensePlate,
   Value<String?> bodyStyle,
+  Value<String?> paintColor,
   required int currentMileage,
   required DateTime mileageUpdatedAt,
   required DateTime createdAt,
@@ -3162,6 +3217,7 @@ typedef $$VehiclesTableUpdateCompanionBuilder = VehiclesCompanion Function({
   Value<String?> vin,
   Value<String?> licensePlate,
   Value<String?> bodyStyle,
+  Value<String?> paintColor,
   Value<int> currentMileage,
   Value<DateTime> mileageUpdatedAt,
   Value<DateTime> createdAt,
@@ -3265,6 +3321,11 @@ class $$VehiclesTableFilterComposer
 
   ColumnFilters<String> get bodyStyle => $composableBuilder(
     column: $table.bodyStyle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get paintColor => $composableBuilder(
+    column: $table.paintColor,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3390,6 +3451,11 @@ class $$VehiclesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get paintColor => $composableBuilder(
+    column: $table.paintColor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get currentMileage => $composableBuilder(
     column: $table.currentMileage,
     builder: (column) => ColumnOrderings(column),
@@ -3449,6 +3515,11 @@ class $$VehiclesTableAnnotationComposer
 
   GeneratedColumn<String> get bodyStyle =>
       $composableBuilder(column: $table.bodyStyle, builder: (column) => column);
+
+  GeneratedColumn<String> get paintColor => $composableBuilder(
+    column: $table.paintColor,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get currentMileage => $composableBuilder(
     column: $table.currentMileage,
@@ -3561,6 +3632,7 @@ class $$VehiclesTableTableManager
                 Value<String?> vin = const Value.absent(),
                 Value<String?> licensePlate = const Value.absent(),
                 Value<String?> bodyStyle = const Value.absent(),
+                Value<String?> paintColor = const Value.absent(),
                 Value<int> currentMileage = const Value.absent(),
                 Value<DateTime> mileageUpdatedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -3574,6 +3646,7 @@ class $$VehiclesTableTableManager
                 vin: vin,
                 licensePlate: licensePlate,
                 bodyStyle: bodyStyle,
+                paintColor: paintColor,
                 currentMileage: currentMileage,
                 mileageUpdatedAt: mileageUpdatedAt,
                 createdAt: createdAt,
@@ -3589,6 +3662,7 @@ class $$VehiclesTableTableManager
                 Value<String?> vin = const Value.absent(),
                 Value<String?> licensePlate = const Value.absent(),
                 Value<String?> bodyStyle = const Value.absent(),
+                Value<String?> paintColor = const Value.absent(),
                 required int currentMileage,
                 required DateTime mileageUpdatedAt,
                 required DateTime createdAt,
@@ -3602,6 +3676,7 @@ class $$VehiclesTableTableManager
                 vin: vin,
                 licensePlate: licensePlate,
                 bodyStyle: bodyStyle,
+                paintColor: paintColor,
                 currentMileage: currentMileage,
                 mileageUpdatedAt: mileageUpdatedAt,
                 createdAt: createdAt,

@@ -21,6 +21,32 @@ void main() {
     await settle(tester);
   }
 
+  /// The shape chips scroll: there are more shapes than fit a phone's width.
+  Future<void> chooseStyle(WidgetTester tester, String label) async {
+    await tester.scrollUntilVisible(
+      find.text(label),
+      120,
+      scrollable: find.byType(Scrollable).first,
+      maxScrolls: 20,
+    );
+    await settle(tester);
+    await tester.tap(find.text(label).first);
+    await settle(tester);
+  }
+
+  /// Swatches carry no text, so they are reached the way a screen reader
+  /// reaches them.
+  Future<void> chooseColor(WidgetTester tester, String label) async {
+    await tester.tap(find.bySemanticsLabel(label).first);
+    await settle(tester);
+  }
+
+  /// The shape step, then the colour step, with the defaults accepted.
+  Future<void> skipToName(WidgetTester tester) async {
+    await next(tester);
+    await next(tester);
+  }
+
   Future<void> answerName(WidgetTester tester, String name) async {
     await tester.enterText(find.byType(TextField).first, name);
     await settle(tester);
@@ -31,6 +57,7 @@ void main() {
 
     expect(find.text('어떤 차인가요?'), findsOneWidget);
     // 다음 질문은 아직 보이지 않는다.
+    expect(find.text('무슨 색인가요?'), findsNothing);
     expect(find.text('이 차를 뭐라고 부를까요?'), findsNothing);
     expect(find.text('지금 주행거리는요?'), findsNothing);
   });
@@ -41,15 +68,26 @@ void main() {
     await openWizard(tester, buildTestApp().app);
 
     expect(find.text('세단'), findsWidgets);
-    await tester.tap(find.text('SUV').first);
-    await settle(tester);
+    await chooseStyle(tester, 'SUV');
 
     expect(find.text('SUV'), findsWidgets);
   });
 
-  testWidgets('reveals the next question only after answering', (tester) async {
+  testWidgets('the colour question comes after the shape', (tester) async {
     await openWizard(tester, buildTestApp().app);
     await next(tester);
+
+    expect(find.text('무슨 색인가요?'), findsOneWidget);
+    // 기본값이 이미 골라져 있어서 그냥 넘어갈 수 있다.
+    expect(find.text('화이트'), findsWidgets);
+
+    await chooseColor(tester, '레드');
+    expect(find.text('레드'), findsWidgets);
+  });
+
+  testWidgets('reveals the next question only after answering', (tester) async {
+    await openWizard(tester, buildTestApp().app);
+    await skipToName(tester);
 
     expect(find.text('이 차를 뭐라고 부를까요?'), findsOneWidget);
     // 이름이 비어 있으면 진행할 수 없다.
@@ -71,21 +109,23 @@ void main() {
 
   testWidgets('keeps answered questions visible as chips', (tester) async {
     await openWizard(tester, buildTestApp().app);
-    await tester.tap(find.text('SUV').first);
-    await settle(tester);
+    await chooseStyle(tester, 'SUV');
+    await next(tester);
+    await chooseColor(tester, '레드');
     await next(tester);
     await answerName(tester, '내 아반떼');
     await next(tester);
 
     // 답한 것이 사라지지 않는다.
     expect(find.text('SUV'), findsWidgets);
+    expect(find.text('레드'), findsWidgets);
     expect(find.text('내 아반떼'), findsWidgets);
     expect(find.text('지금 주행거리는요?'), findsOneWidget);
   });
 
   testWidgets('shows the mileage formatted as it is typed', (tester) async {
     await openWizard(tester, buildTestApp().app);
-    await next(tester);
+    await skipToName(tester);
     await answerName(tester, '아반떼');
     await next(tester);
 
@@ -97,7 +137,7 @@ void main() {
 
   testWidgets('refuses an implausible odometer reading', (tester) async {
     await openWizard(tester, buildTestApp().app);
-    await next(tester);
+    await skipToName(tester);
     await answerName(tester, '아반떼');
     await next(tester);
     await tester.enterText(find.byType(TextField).first, '9000000');
@@ -114,7 +154,7 @@ void main() {
   testWidgets('saves nothing until the last step', (tester) async {
     final (:app, :container) = buildTestApp();
     await openWizard(tester, app);
-    await next(tester);
+    await skipToName(tester);
     await answerName(tester, '아반떼');
     await next(tester);
     await tester.enterText(find.byType(TextField).first, '32000');
@@ -128,8 +168,9 @@ void main() {
   testWidgets('finishing puts the car in the garage', (tester) async {
     final (:app, :container) = buildTestApp();
     await openWizard(tester, app);
-    await tester.tap(find.text('SUV').first);
-    await settle(tester);
+    await chooseStyle(tester, 'SUV');
+    await next(tester);
+    await chooseColor(tester, '레드');
     await next(tester);
     await answerName(tester, '내 아반떼');
     await next(tester);
@@ -144,6 +185,7 @@ void main() {
     expect(vehicles.single.displayName, '내 아반떼');
     expect(vehicles.single.currentMileage, 47250);
     expect(vehicles.single.bodyStyle, 'suv');
+    expect(vehicles.single.paintColor, 'red');
 
     // 등록한 차가 바로 차고에 보인다.
     expect(find.text('내 아반떼'), findsWidgets);
@@ -153,7 +195,7 @@ void main() {
   testWidgets('optional details are saved when filled in', (tester) async {
     final (:app, :container) = buildTestApp();
     await openWizard(tester, app);
-    await next(tester);
+    await skipToName(tester);
     await answerName(tester, '아반떼');
     await next(tester);
     await tester.enterText(find.byType(TextField).first, '32000');
@@ -172,7 +214,7 @@ void main() {
 
   testWidgets('going back returns to the previous question', (tester) async {
     await openWizard(tester, buildTestApp().app);
-    await next(tester);
+    await skipToName(tester);
     await answerName(tester, '아반떼');
     await next(tester);
     expect(find.text('지금 주행거리는요?'), findsOneWidget);
